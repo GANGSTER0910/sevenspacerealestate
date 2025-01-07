@@ -1,26 +1,28 @@
 import React from "react";
 import { BrowserRouter as Router, Route, Routes, Link, BrowserRouter } from "react-router-dom";
-import Home from "./pages/Home";
-import SignIn from "./pages/SignIn";
-import SignUp from "./pages/SignUp";
-import About from "./pages/About";
-import Contact_us from "./pages/Contact_us";
-import Header from "./components/Header";
-import Service from "./pages/Service";
-import Property from "./pages/Property";
+import Home from "./components/jsx/Home";
+import SignIn from "./components/jsx/SignIn";
+import SignUp from "./components/jsx/SignUp";
+import About from "./components/jsx/About";
+import Contact_us from "./components/jsx/Contact_us";
+import Header from "./components/jsx/Header";
+import Service from "./components/jsx/Service";
+import Property from "./components/jsx/Property";
+import ForgotPassword from "./components/jsx/ForgotPassword";
+
 const App = () => {
     return (
         <BrowserRouter>
         <Header />
         <Routes>
             <Route path="/" element={<Home />}/>
-            <Route path="/sign-in" element={<SignIn />}/>
-            <Route path="/sign-up" element={<SignUp />}/>
+            <Route path="/SignIn" element={<SignIn />}/>
+            <Route path="/SignUp" element={<SignUp />}/>
             <Route path="/about" element={<About />}/>
             <Route path="/contactus" element={<Contact_us />}/>
             <Route path="/service" element={<Service />}/>
             <Route path="/property" element={<Property />}/>
-            
+            <Route path="/ForgotPassword" element={< ForgotPassword/>}/>
             
         </Routes>
         </BrowserRouter>

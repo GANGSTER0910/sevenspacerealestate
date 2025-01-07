@@ -1,0 +1,60 @@
+* {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+#OTP_Field {
+    width: 500px;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.SignIn_OTP {
+    width: 28%;
+    border: 1px solid #999696;
+    border-radius: 8px;
+    height: 50px;
+    margin: 10px 0px;
+    box-shadow: 0px 1px 3px gray;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.SignIn_OTP:hover {
+    border: 1px solid black;
+}
+
+.OTP_Text {
+    font-size: large;
+    font-weight: 500;
+}
+
+.SignIn_OTP_Input {
+    width: 68%;
+    border: 1px solid #999696;
+    border-radius: 8px;
+    height: 50px;
+    margin: 10px 0px;
+    box-shadow: 0px 1px 3px gray;
+    padding: 0px 10px;
+}
+
+.SignIn_OTP_Input:hover {
+    border: 1px solid black;
+}
+
+#Not_Account {
+    align-self: flex-start;
+    margin: 10px 0px;
+    font-size: large;
+}
+
+.parentpopup:hover .popup {
+    transform: scale(1.1);
+    transition: transform 0.2s;
+}

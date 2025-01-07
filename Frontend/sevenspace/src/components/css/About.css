@@ -1,0 +1,73 @@
+* {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+#About {
+    width: 100%;
+    display: flex;
+    padding: 40px;
+    background-color: #f5f7fb;
+}
+
+#About_Inner {
+    padding: 20px;
+    background-color: white;
+    box-shadow: 1px 1px 20px gray;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+}
+
+.About_Heading {
+    font-size: xx-large;
+    font-weight: 700;
+    margin-top: 10px;
+}
+
+.About_Para {
+    font-size: larger;
+    font-weight: 300;
+    margin: 10px 0px;   
+}
+
+.BOD_Outer {
+    width: 100%;
+    margin: 10px 0px;
+    display: flex;
+    flex-direction: row;
+    padding: 0px 10px 30px 10px;
+    border: 1px solid gray;
+    border-radius: 16px;
+}
+
+.BOD_Img {
+    width: 40%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.BOD_Text {
+    width: 70%;
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+}
+
+.BOD_Img_edit {
+    height: 100%;
+}
+
+.BOD_Text_edit {
+    color: #878c9f;
+    margin: 5px 0px;
+    font-size: 15px;
+}
+
+.BOD_Text_edit_Bold {
+    font-size: large;
+    font-weight: 700;
+}

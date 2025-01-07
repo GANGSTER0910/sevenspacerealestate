@@ -1,0 +1,84 @@
+* {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+#SignIn {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 80px 0px;
+}
+
+#SignIn_Inner {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    border: 1px solid gray;
+    padding: 30px 30px;
+    border-radius: 16px;
+    box-shadow: 1px 1px 5px gray;
+}
+
+#SignIn_Text {
+    font-weight: 700;
+    font-size: xx-large;
+    padding: 0px 0px 15px 0px;
+}
+
+#SignIn_Form {
+    display: flex;
+    flex-direction: column;
+}
+
+.SignIn_Input {
+    border: 1px solid #999696;
+    width: 500px;
+    padding: 0px 10px;
+    margin: 10px 0px;
+    border-radius: 8px;
+    height: 50px;
+    box-shadow: 0px 1px 3px gray;
+}
+
+.SignIn_Input:hover {
+    border: 1px solid black;
+}
+
+.SingIn_Button {
+    background-color: rgb(51,65,85);
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: large;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.SignIn_Extra_Text {
+    align-self: flex-end;
+    margin: 10px 0px;
+    font-size: large;
+}
+
+.Hover_Effect {
+    transition: transform 0.2s;
+    display: inline-block;
+}
+
+.Hover_Effect:hover {
+    transform: scale(1.1);
+}
+
+.extra {
+    align-self: center;
+}
+
+.parentpopup:hover .popup {
+    transform: scale(1.1);
+    transition: transform 0.2s;
+}
