@@ -1,7 +1,8 @@
 from pymongo import MongoClient
 from urllib.parse import quote_plus
 import os
-
+from dotenv import load_dotenv
+load_dotenv()
 
 mongo_uri = os.getenv("Database_link")
 
