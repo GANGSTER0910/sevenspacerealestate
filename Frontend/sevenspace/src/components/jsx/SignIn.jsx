@@ -35,6 +35,7 @@ const SignIn = () => {
       setErrorMessage("Something went wrong. Please try again.");
     }
   };
+
   const handleGoogleAuth = async () => {
     try {
       const response = await fetch("http://localhost:8000/google/login", {
@@ -58,7 +59,7 @@ const SignIn = () => {
       <div id="SignIn_Inner">
         <span id="SignIn_Text">Sign In</span>
         <form id="SignIn_Form" onSubmit={handleSignIn}>
-          <input
+          <input 
             type="email"
             placeholder="Email"
             id="Email"
@@ -82,29 +83,28 @@ const SignIn = () => {
         </form>
         {errorMessage && <span className="error-message">{errorMessage}</span>}
         <div className="SignIn_Extra_Options">
-  <button
-    onClick={handleGoogleAuth}
-    className="Hover_Effect google-auth-button"
-    style={{
-      border: "none",
-      background: "none",
-      color: "rgb(49,87,222)",
-      cursor: "pointer",
-      textDecoration: "underline",
-    }}
-  >
-    Continue with Google
-  </button>
-  <Link
-    to="/ForgotPassword"
-    style={{ color: "#524f4f", textDecoration: "underline" }}
-    className="Hover_Effect"
-  >
-    Forgot Password?
-  </Link>
-</div>
-
-<span className="SignIn_Extra_Text extra">
+          <button
+            onClick={handleGoogleAuth}
+            className="Hover_Effect google-auth-button"
+            style={{
+              border: "none",
+              background: "none",
+              color: "rgb(49,87,222)",
+              cursor: "pointer",
+              textDecoration: "underline",
+            }}
+          >
+            Continue with Google
+          </button>
+          <Link
+            to="/ForgotPassword"
+            style={{ color: "#524f4f", textDecoration: "underline" }}
+            className="Hover_Effect"
+          >
+            Forgot Password?
+          </Link>
+        </div>
+        <span className="SignIn_Extra_Text extra">
           Don't have an account? &nbsp;
           <Link to="/SignUp" style={{ color: "rgb(49,87,222)" }} className="Hover_Effect">
             Sign Up

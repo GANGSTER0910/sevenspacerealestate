@@ -264,9 +264,9 @@ const SignUp = () => {
         </form>
         <button
           onClick={handleGoogleAuth}
-          className="SignIn_Input SingIn_Button Google_Button"
+          className="SignIn_Input SingIn_Button Google_Button parentpopup"
         >
-          Continue with Google
+          <span className="popup">Continue with Google</span>
         </button>
         <span id="Not_Account">
           Already have an account? &nbsp;{" "}

@@ -1,0 +1,222 @@
+* {
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+}
+
+#Home_Main {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px;
+    background: linear-gradient(135deg, #f9f9f9, #e0e0e0);
+    font-family: 'Arial', sans-serif;
+}
+
+#Home_Heading {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    max-width: 1200px;
+    border-radius: 16px;
+    padding: 40px;
+    background-color: #ffffff;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    justify-content: space-between;
+    margin-bottom: 40px;
+}
+
+#Home_Heading_Text {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    max-width: 60%;
+}
+
+.Home_Big_Text {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #333;
+    line-height: 1.3;
+    margin-bottom: 10px;
+}
+
+.Home_Big_Text_Extra {
+    color: #333;
+    font-weight: 900;
+}
+
+.Home_Small_Text {
+    font-size: 1rem;
+    font-weight: 400;
+    color: #555;
+    margin-bottom: 20px;
+    line-height: 1.5;
+}
+
+.Home_Link {
+    color: #2c6e9e;
+    font-weight: bold;
+    font-size: 1.1rem;
+    transition: color 0.3s ease;
+}
+
+.Home_Link:hover {
+    color: #1f3e62;
+    text-decoration: underline;
+}
+
+#Home_Heading_Image {
+    height: 320px;
+    width: 320px;
+    border-radius: 16px;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(145deg, #ffffff, #e0e0e0);
+}
+
+#Home_Img {
+    height: 100%;
+    width: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+#Home_Img:hover {
+    transform: scale(1.05);
+}
+
+#Home_properties {
+    width: 100%;
+    padding: 20px;
+    border: 1px solid black;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.CategorySection {
+    width: 100%;
+    margin-bottom: 30px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.Category {
+    font-size: x-large;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 15px;
+    font-family: 'Arial', sans-serif;
+    display: block;
+}
+
+.Home_prop_items {
+    display: flex;
+    gap: 20px;
+    overflow-x: scroll;
+    scroll-behavior: smooth;
+    flex-grow: 1;
+}
+
+.Home_prop_items::-webkit-scrollbar {
+    display: none;
+}
+
+
+.Item_Holder {
+    width: 250px;
+    max-width: 250px;
+    min-width: 250px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #ffffff;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+}
+
+.Item_Holder:hover {
+    transform: translateY(-10px);
+}
+
+.Item_Holder_Img {
+    width: 100%;
+    height: 220px;
+    overflow: hidden;
+}
+
+.Item_Img_Edit {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.Item_Img_Edit:hover {
+    transform: scale(1.05);
+}
+
+.Item_Holder_Loc {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 60px;
+    background-color: #f4f4f4;
+    border-top: 1px solid #ddd;
+}
+
+.Item_Loc_Edit {
+    font-size: 0.9rem;
+    font-weight: 400;
+    color: #666;
+}
+
+.scrollable-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    width: 100%;
+    overflow: hidden;
+    background-color: #f5f5f5;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.scroll-arrow {
+    width: 40px;
+    min-width: 40px;
+    height: 40px;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #ffffff;
+    border: 2px solid #ddd;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+}
+  
+.scroll-arrow:hover {
+    background-color: #2c6e9e;
+    color: #ffffff;
+    border-color: #2c6e9e;
+}
+  
+.scroll-arrow:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}

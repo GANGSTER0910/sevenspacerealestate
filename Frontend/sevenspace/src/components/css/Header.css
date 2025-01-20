@@ -142,7 +142,22 @@
   }
 
   #Header_Links_Unordered {
-    flex-direction: column;
-    gap: 10px;
+    flex-direction: row;
+    gap: 20px;
+  }
+
+  #Header_Links {
+    margin: 10px 0px;
+  }
+
+  #Header_Logo {
+    margin-bottom: 10px;
+  }
+
+  @media (max-width: 420px) {
+    #Header_Links_Unordered {
+      flex-direction: column;
+      gap: 10px;
+    }
   }
 }
