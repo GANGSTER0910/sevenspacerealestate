@@ -9,6 +9,7 @@ import Header from "./components/jsx/Header";
 import Service from "./components/jsx/Service";
 import Property from "./components/jsx/Property";
 import ForgotPassword from "./components/jsx/ForgotPassword";
+import Footer from "./components/jsx/Footer";
 
 const App = () => {
     return (
@@ -25,6 +26,7 @@ const App = () => {
             <Route path="/ForgotPassword" element={< ForgotPassword/>}/>
             
         </Routes>
+        <Footer />
         </BrowserRouter>
     );
 };
