@@ -10,6 +10,7 @@ import Service from "./components/jsx/Service";
 import Property from "./components/jsx/Property";
 import ForgotPassword from "./components/jsx/ForgotPassword";
 import Footer from "./components/jsx/Footer";
+import IndividualProperty from "./components/jsx/Individual_Property";
 
 const App = () => {
     return (
@@ -24,7 +25,7 @@ const App = () => {
             <Route path="/service" element={<Service />}/>
             <Route path="/Property" element={<Property />}/>
             <Route path="/ForgotPassword" element={< ForgotPassword/>}/>
-            
+            <Route path="/property/:id" element={<IndividualProperty />} />
         </Routes>
         <Footer />
         </BrowserRouter>
