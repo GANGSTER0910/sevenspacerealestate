@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 from fastapi import *
+from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse, Response
 from pymongo import *
 import os
@@ -187,23 +188,30 @@ async def google_auth(request: Request):
         raise HTTPException(status_code=400, detail=f"OAuth error: {error.error}")
 
 
-@app.get("/property")
+@app.post("/property")
 async def add_property(property: Property):
+    # property_data = property.dict() 
+    normalized_title = property.title.strip().lower()
     if not property.listed_date:
         property.listed_date = datetime.now().strftime("%Y-%m-%d")
     existing_property = db1.get_collection('Property').find_one(
-        {"title": property.title, "location": property.location}
+        {"title": normalized_title, "location": property.location.strip()},
+        {"_id": 0}
     )
     if existing_property:
         raise HTTPException(status_code=400, detail="Property already exists.")
     property_data = property.dict()
-    db1.get_collection('Property').insert_one(property_data)
-    return {"message": "Property added successfully", "property": property_data}
+    property_data["title"] = normalized_title
+    property_data["location"] = property.location.strip()
+    result = db1.get_collection('Property').insert_one(property_data)
+    property_data["_id"] = str(result.inserted_id)
+    return {"message": "Property added successfully", "property": jsonable_encoder(property_data)}
 
 @app.get("/property/category")
-async def get_property_by_category(category: str):
-    query = {}
-    if status:
+async def get_property_by_category(category: str, status: Optional[str] = None):
+    query = {"category": category}  # Adding category to the query
+    
+    if status:  # If status is provided, include it in the query
         query["status"] = status
 
     properties = list(db1.get_collection('Property').find(query, {"_id": 0}))
