@@ -187,6 +187,28 @@ async def google_auth(request: Request):
         raise HTTPException(status_code=400, detail=f"OAuth error: {error.error}")
 
 
+@app.get("/property")
+async def add_property(property: Property):
+    if not property.listed_date:
+        property.listed_date = datetime.now().strftime("%Y-%m-%d")
+    existing_property = db1.get_collection('Property').find_one(
+        {"title": property.title, "location": property.location}
+    )
+    if existing_property:
+        raise HTTPException(status_code=400, detail="Property already exists.")
+    property_data = property.dict()
+    db1.get_collection('Property').insert_one(property_data)
+    return {"message": "Property added successfully", "property": property_data}
+
+@app.get("/property/category")
+async def get_property_by_category(category: str):
+    query = {}
+    if status:
+        query["status"] = status
+
+    properties = list(db1.get_collection('Property').find(query, {"_id": 0}))
+    return {"count": len(properties), "properties": properties}
+
 
 if __name__ == "__main__":
     import uvicorn
