@@ -1,6 +1,7 @@
 from datetime import datetime
 from pydantic import BaseModel, Field
 from typing import List, Optional
+from uuid import uuid4
 
 class User(BaseModel):
     # username: str
@@ -26,6 +27,7 @@ class admin(BaseModel):
     password: str
             
 class Property(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid4()))
     title: str
     description: str
     property_type: str  # e.g., "Apartment", "House", "Commercial"
