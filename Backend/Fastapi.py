@@ -208,16 +208,26 @@ async def add_property(property: Property):
     return {"message": "Property added successfully", "property": jsonable_encoder(property_data)}
 
 @app.get("/property/category")
-async def get_property_by_category(category: str, status: Optional[str] = None):
-    query = {"category": category}  # Adding category to the query
-    
-    if status:  # If status is provided, include it in the query
+async def get_property_by_category(category: str, status: str = "available"):
+    query = {"property_type": category}
+
+    if status:  
         query["status"] = status
 
     properties = list(db1.get_collection('Property').find(query, {"_id": 0}))
+
     return {"count": len(properties), "properties": properties}
 
-
+@app.get("/property/{property_id}")
+async def get_property(property_id: str):
+    try:
+        property_data = db1.get_collection('Property').find_one({"_id": ObjectId(property_id)})
+        if not property_data:
+            raise HTTPException(status_code=404, detail="Property not found")
+        property_data["_id"] = str(property_data["_id"])  # Convert ObjectId to string
+        return property_data
+    except:
+        raise HTTPException(status_code=400, detail="Invalid Property ID")
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
