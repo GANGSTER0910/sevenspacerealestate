@@ -4,6 +4,7 @@ import "../css/Home.css";
 import ExtraImage from "../../assets/Real Estate.jpg";
 
 const API_BASE_URL = "http://localhost:8000"; 
+const n = 10;
 
 function scrolll(value) {
   let cont = document.querySelector(`#${value}`);
@@ -73,7 +74,7 @@ export default function Home() {
               </button>
               <div className="Home_prop_items" id={category}>
                 {items.length > 0 ? (
-                  items.map((property) => (
+                  items.slice(0,n).map((property) => (
                     <PropertyCard key={property.id} id={property.id} address={property.description} image={property.image || ExtraImage} />
                   ))
                 ) : (
@@ -92,12 +93,10 @@ export default function Home() {
 }
 
 const PropertyCard = ({ id, address, image }) => (
-  <Link to={`/property/${id}`} className="Item_Holder">
-    <div className="Item_Holder_Img">
-      <img src={image} className="Item_Img_Edit" alt="Property" />
-    </div>
-    <div className="Item_Holder_Loc">
-      <span className="Item_Loc_Edit">{address || "Address not available"}</span>
-    </div>
+  <Link to={`/property/${id}`} className="property-card">
+    <img src={image} alt="Property" className="property-card-img" />
+    <span className="property-card-address">{address || "Address not available"}</span>
   </Link>
 );
+
+
