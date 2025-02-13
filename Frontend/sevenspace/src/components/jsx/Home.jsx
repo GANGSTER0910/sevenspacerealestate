@@ -32,6 +32,7 @@ export default function Home() {
       try {
         const response = await fetch(`${API_BASE_URL}/property/category?category=${category}&status=available`);
         const data = await response.json();
+        console.log(data.type);
         setProperties((prev) => ({
           ...prev,
           [category]: data.properties || [], // Ensure data is correctly stored
