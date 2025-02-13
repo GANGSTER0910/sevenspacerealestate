@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+pymongo
+python-dotenv
+passlib[bcrypt]
+pyjwt
+bson
+sendgrid
+jinja2
+starlette
+authlib
