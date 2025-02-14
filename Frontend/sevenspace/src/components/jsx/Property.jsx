@@ -229,7 +229,7 @@ const Property = () => {
     const categories = ["Flat", "Apartment", "PG", "Hostel", "Cottage"];
     const fetchProperties = async (category) => {
       try {
-        const response = await fetch("http://localhost:8000/property/category?category=${category}&status=available"); // Replace with actual FastAPI endpoint
+        const response = await fetch("https://sevenspacerealestate.onrender.com/property/category?category=${category}&status=available"); // Replace with actual FastAPI endpoint
         if (!response.ok) {
           throw new Error("Failed to fetch properties");
         }

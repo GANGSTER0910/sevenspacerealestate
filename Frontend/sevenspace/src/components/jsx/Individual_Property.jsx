@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import ExtraImage from "../../assets/Real Estate.jpg";
 import "../css/Individual_Property.css";
 
-const API_BASE_URL = "http://localhost:8000"; 
+const API_BASE_URL = "https://sevenspacerealestate.onrender.com"; 
 
 const IndividualProperty = () => {
   const { id } = useParams();

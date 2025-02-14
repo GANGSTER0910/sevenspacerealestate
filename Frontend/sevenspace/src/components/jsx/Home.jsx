@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import "../css/Home.css";
 import ExtraImage from "../../assets/Real Estate.jpg";
 
-const API_BASE_URL = "http://localhost:8000"; 
+const API_BASE_URL = "https://sevenspacerealestate.onrender.com"; 
 const n = 10;
 
 function scrolll(value) {

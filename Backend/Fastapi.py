@@ -25,6 +25,7 @@ load_dotenv()
 origins = [
     "http://localhost:5173",
     "http://localhost:8000",
+    "https://sevenspacerealestate.vercel.app",
     ]  
 
 Secret_key = os.getenv("SECRET_KEY")
