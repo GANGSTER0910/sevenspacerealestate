@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
+import { useContext } from "react";
 import { Link } from "react-router-dom";
+import { PropertyContext } from "./PropertyContext";
 import "../css/Home.css";
 import ExtraImage from "../../assets/Real Estate.jpg";
 
-const API_BASE_URL = "http://localhost:8000"; 
 const n = 10;
 
 function scrolll(value) {
@@ -17,33 +17,21 @@ function scrollr(value) {
 }
 
 export default function Home() {
-  const [properties, setProperties] = useState({
-    Flat: [],
-    Apartment: [],
-    PG: [],
-    Hostel: [],
-    Cottage: [],
-  });
+  const { allProperties, loading } = useContext(PropertyContext);
 
-  useEffect(() => {
-    const categories = ["Flat", "Apartment", "PG", "Hostel", "Cottage"];
+  if (loading) {
+    return <p>Loading properties...</p>;
+  }
 
-    const fetchProperties = async (category) => {
-      try {
-        const response = await fetch(`${API_BASE_URL}/property/category?category=${category}&status=available`);
-        const data = await response.json();
-        setProperties((prev) => ({
-          ...prev,
-          [category]: data.properties || [], // Ensure data is correctly stored
-        }));
-      } catch (error) {
-        console.error(`Error fetching ${category}:`, error);
-      }
-    };
+  if (!allProperties || allProperties.length === 0) {
+    return <p>No properties available</p>;
+  }
 
-    // Fetch data for each category
-    categories.forEach((category) => fetchProperties(category));
-  }, []);
+  const categories = ["Flat", "Apartment", "PG", "Hostel", "Cottage"];
+  const categorizedProperties = categories.reduce((acc, category) => {
+    acc[category] = allProperties.filter(prop => prop.property_type === category);
+    return acc;
+  }, {});
 
   return (
     <div id="Home_Main">
@@ -65,7 +53,7 @@ export default function Home() {
       </div>
 
       <div id="Home_properties">
-        {Object.entries(properties).map(([category, items]) => (
+        {categories.map((category) => (
           <div className="CategorySection" key={category}>
             <span className="Category">{category}</span>
             <div className="scrollable-container">
@@ -73,8 +61,8 @@ export default function Home() {
                 &lt;
               </button>
               <div className="Home_prop_items" id={category}>
-                {items.length > 0 ? (
-                  items.slice(0,n).map((property) => (
+                {categorizedProperties[category]?.length > 0 ? (
+                  categorizedProperties[category].slice(0, n).map((property) => (
                     <PropertyCard key={property.id} id={property.id} address={property.description} image={property.image || ExtraImage} />
                   ))
                 ) : (
@@ -98,5 +86,3 @@ const PropertyCard = ({ id, address, image }) => (
     <span className="property-card-address">{address || "Address not available"}</span>
   </Link>
 );
-
-
