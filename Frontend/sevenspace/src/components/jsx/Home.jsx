@@ -4,6 +4,10 @@ import { PropertyContext } from "./PropertyContext";
 import "../css/Home.css";
 import ExtraImage from "../../assets/Real Estate.jpg";
 
+<<<<<<< HEAD
+=======
+const API_BASE_URL = "https://sevenspacerealestate.onrender.com"; 
+>>>>>>> b93f9da577e7261d14a261f45f9b56ef4c66988f
 const n = 10;
 
 function scrolll(value) {
@@ -23,9 +27,25 @@ export default function Home() {
     return <p>Loading properties...</p>;
   }
 
+<<<<<<< HEAD
   if (!allProperties || allProperties.length === 0) {
     return <p>No properties available</p>;
   }
+=======
+    const fetchProperties = async (category) => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/property/category?category=${category}&status=available`);
+        const data = await response.json();
+        console.log(data.type);
+        setProperties((prev) => ({
+          ...prev,
+          [category]: data.properties || [], // Ensure data is correctly stored
+        }));
+      } catch (error) {
+        console.error(`Error fetching ${category}:`, error);
+      }
+    };
+>>>>>>> b93f9da577e7261d14a261f45f9b56ef4c66988f
 
   const categories = ["Flat", "Apartment", "PG", "Hostel", "Cottage"];
   const categorizedProperties = categories.reduce((acc, category) => {

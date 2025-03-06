@@ -25,6 +25,7 @@ load_dotenv()
 origins = [
     "http://localhost:5173",
     "http://localhost:8000",
+    "https://sevenspacerealestate.vercel.app",
     ]  
 
 Secret_key = os.getenv("SECRET_KEY")
@@ -54,7 +55,7 @@ oauth.register(
     client_secret=CLIENT_SECRET,
     client_kwargs={
         'scope': 'email openid profile',
-        'redirect_url': 'http://localhost:8000/auth'
+        'redirect_url': 'https://sevenspacerealestate.onrender.com/auth'
     }
 )
 

@@ -195,7 +195,7 @@ const SignUp = () => {
 
   const handleGoogleAuth = async () => {
     try {
-      const response = await fetch("http://localhost:8000/google/login", {
+      const response = await fetch("https://sevenspacerealestate.onrender.com/google/login", {
         method: "GET",
         credentials: "include", 
       });
