@@ -9,7 +9,6 @@ const Header = () => {
   const navigate = useNavigate();
 
   const homePage = () => {
-    console.log("clicked");
     navigate('/');
   };
 

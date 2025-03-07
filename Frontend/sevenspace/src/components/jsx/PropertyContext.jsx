@@ -12,13 +12,14 @@ export function PropertyProvider({ children }) {
   useEffect(() => {
     async function fetchProperties() {
       setLoading(true);
-      setError(null); // Reset error before fetching
+      setError(null);
 
       try {
         const response = await fetch(`${API_BASE_URL}/property/all`);
         if (!response.ok) {
           throw new Error(`HTTP error! Status: ${response.status}`);
         }
+        console.log(response);
         const data = await response.json();
         setProperties(data.properties || []);
       } catch (error) {

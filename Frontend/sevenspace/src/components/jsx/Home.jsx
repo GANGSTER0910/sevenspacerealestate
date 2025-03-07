@@ -29,12 +29,13 @@ export default function Home() {
   useEffect(() => {
     const fetchProperties = async (category) => {
       try {
-        const response = await fetch(`${API_BASE_URL}/property/category?category=${category}&status=available`);
+        // const response = await fetch(`${API_BASE_URL}/property/category?category=${category}&status=available`);
+        const response = await fetch(`${API_BASE_URL}/property/all`);
         const data = await response.json();
-        console.log(`Fetched properties for ${category}:`, data.properties);
+        console.log(data.properties[0]);
         setProperties((prev) => ({
           ...prev,
-          [category]: data.properties || [], // Ensure data is correctly stored
+          [category]: data.properties || [],
         }));
       } catch (error) {
         console.error(`Error fetching ${category}:`, error);
@@ -72,10 +73,9 @@ export default function Home() {
                 &lt;
               </button>
               <div className="Home_prop_items" id={category}>
-                {properties[category]?.length > 0 ? ( // Use properties instead of categorizedProperties
+                {properties[category]?.length > 0 ? (
                   properties[category].slice(0, n).map((property) => (
                     <PropertyCard 
-                      key={property.id} 
                       id={property.id} 
                       address={property.description} 
                       image={property.image || ExtraImage} 
