@@ -1,4 +1,4 @@
-// import React, { useState, useEffect } from "react";
+import { useContext } from "react";
 // import { useParams } from "react-router-dom";
 // import ExtraImage from "../../assets/Real Estate.jpg";
 // import "../css/Individual_Property.css";
@@ -61,7 +61,9 @@ import { PropertyContext } from "./PropertyContext";
 import ExtraImage from "../../assets/Real Estate.jpg";
 import "../css/Individual_Property.css";
 
-const Individual_Property = () => {
+const API_BASE_URL = "https://sevenspacerealestate.onrender.com"; 
+
+const IndividualProperty = () => {
   const { id } = useParams();
   const { allProperties, loading } = useContext(PropertyContext);
 
