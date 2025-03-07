@@ -6,15 +6,26 @@ const API_BASE_URL = "https://sevenspacerealestate.onrender.com";
 
 export function PropertyProvider({ children }) {
   const [properties, setProperties] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     async function fetchProperties() {
+      setLoading(true);
+      setError(null); // Reset error before fetching
+
       try {
         const response = await fetch(`${API_BASE_URL}/property/all`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
         const data = await response.json();
         setProperties(data.properties || []);
       } catch (error) {
         console.error("Error fetching properties:", error);
+        setError(error.message);
+      } finally {
+        setLoading(false);
       }
     }
 
@@ -22,7 +33,7 @@ export function PropertyProvider({ children }) {
   }, []);
 
   return (
-    <PropertyContext.Provider value={{ properties, setProperties }}>
+    <PropertyContext.Provider value={{ properties, setProperties, loading, error }}>
       {children}
     </PropertyContext.Provider>
   );
