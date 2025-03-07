@@ -26,6 +26,7 @@ origins = [
     "http://localhost:5173",
     "http://localhost:8000",
     "https://sevenspacerealestate.vercel.app",
+    "http://localhost:5174",
     ]  
 
 Secret_key = os.getenv("SECRET_KEY")
