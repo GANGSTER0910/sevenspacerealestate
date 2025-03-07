@@ -5,7 +5,7 @@ import ExtraImage from "../../assets/Real Estate.jpg";
 
 const API_BASE_URL = "https://sevenspacerealestate.onrender.com"; 
 const n = 10;
-const categories = ["Flat", "Apartment", "PG", "Hostel", "Cottage"]; // Define categories globally
+const categories = ["Flat", "Apartment", "PG", "Hostel", "Cottage"];
 
 function scrolll(value) {
   let cont = document.querySelector(`#${value}`);
