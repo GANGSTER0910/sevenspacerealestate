@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { PropertyContext } from "./PropertyContext";
 import "../css/Home.css";
 import ExtraImage from "../../assets/Real Estate.jpg";
 
 const API_BASE_URL = "https://sevenspacerealestate.onrender.com"; 
 const n = 10;
+const categories = ["Flat", "Apartment", "PG", "Hostel", "Cottage"]; // Define categories globally
 
 function scrolll(value) {
   let cont = document.querySelector(`#${value}`);
@@ -27,13 +27,11 @@ export default function Home() {
   });
 
   useEffect(() => {
-    const categories = ["Flat", "Apartment", "PG", "Hostel", "Cottage"];
-
     const fetchProperties = async (category) => {
       try {
         const response = await fetch(`${API_BASE_URL}/property/category?category=${category}&status=available`);
         const data = await response.json();
-        console.log(data.type);
+        console.log(`Fetched properties for ${category}:`, data.properties);
         setProperties((prev) => ({
           ...prev,
           [category]: data.properties || [], // Ensure data is correctly stored
@@ -43,7 +41,6 @@ export default function Home() {
       }
     };
 
-    // Fetch data for each category
     categories.forEach((category) => fetchProperties(category));
   }, []);
 
@@ -75,9 +72,14 @@ export default function Home() {
                 &lt;
               </button>
               <div className="Home_prop_items" id={category}>
-                {categorizedProperties[category]?.length > 0 ? (
-                  categorizedProperties[category].slice(0, n).map((property) => (
-                    <PropertyCard key={property.id} id={property.id} address={property.description} image={property.image || ExtraImage} />
+                {properties[category]?.length > 0 ? ( // Use properties instead of categorizedProperties
+                  properties[category].slice(0, n).map((property) => (
+                    <PropertyCard 
+                      key={property.id} 
+                      id={property.id} 
+                      address={property.description} 
+                      image={property.image || ExtraImage} 
+                    />
                   ))
                 ) : (
                   <p>No properties available</p>

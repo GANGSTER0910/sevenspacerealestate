@@ -233,3 +233,10 @@ if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
     
+
+@app.get("/property/all")
+async def get_all_properties(status: str = "available"):
+    query = {"status": status} if status else {}  # Filter by status if provided
+    properties = list(db1.get_collection("Property").find(query, {"_id": 0}))
+
+    return {"count": len(properties), "properties": properties}

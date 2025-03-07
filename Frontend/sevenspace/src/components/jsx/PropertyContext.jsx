@@ -10,7 +10,7 @@ export function PropertyProvider({ children }) {
   useEffect(() => {
     async function fetchProperties() {
       try {
-        const response = await fetch(`${API_BASE_URL}/property/all?status=available`);
+        const response = await fetch(`${API_BASE_URL}/property/all`);
         const data = await response.json();
         setProperties(data.properties || []);
       } catch (error) {

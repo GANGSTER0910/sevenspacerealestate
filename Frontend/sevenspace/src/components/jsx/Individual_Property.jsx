@@ -1,4 +1,4 @@
-import { useContext } from "react";
+// import { useContext } from "react";
 // import { useParams } from "react-router-dom";
 // import ExtraImage from "../../assets/Real Estate.jpg";
 // import "../css/Individual_Property.css";
@@ -97,4 +97,4 @@ const IndividualProperty = () => {
   );
 };
 
-export default Individual_Property;
+export default IndividualProperty;
