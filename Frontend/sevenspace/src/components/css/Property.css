@@ -29,6 +29,10 @@ h1 {
   gap: 15px;
 }
 
+.filter {
+  margin-bottom: 20px;
+}
+
 .filter select {
   padding: 10px;
   font-size: 16px;
@@ -46,18 +50,22 @@ h1 {
 
 /* Property List */
 .property-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 20px;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 30px;
   padding: 10px;
-  justify-items: center;
+  align-items: center;
+  justify-content: space-evenly;
 }
 
 /* Property Card */
 .property-card {
   width: 250px;
+  height: 250px;
   max-width: 250px;
   min-width: 250px;
+  max-height: 250px;
   color: inherit;
   background-color: #fff;
   border-radius: 8px;

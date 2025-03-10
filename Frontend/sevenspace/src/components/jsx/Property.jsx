@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext } from "react";
 import { Link } from "react-router-dom";
 import { PropertyContext } from "./PropertyContext";
 import "../css/Property.css"; 
+import ExtraImage from "../../assets/Real Estate.jpg";
 
 const Property = () => {
   const { properties } = useContext(PropertyContext);
@@ -54,6 +55,7 @@ const Property = () => {
             <option value="Apartment">Apartment</option>
             <option value="PG">PG</option>
             <option value="Hostel">Hostel</option>
+            <option value="Cottage">Cottage</option>
           </select>
 
           <select onChange={(e) => setFilters({ ...filters, priceRange: e.target.value })}>
@@ -82,7 +84,11 @@ const Property = () => {
         <div className="property-list">
           {filteredProperties.length > 0 ? (
             filteredProperties.map((property) => (
-              <PropertyCard key={property.id} id={property.id} address={property.address} image={property.image} />
+              <PropertyCard 
+                id={property.id} 
+                title={property.title} 
+                image={property.image || ExtraImage} 
+              />
             ))
             ) : (
               <p>No properties found.</p>
@@ -95,10 +101,10 @@ const Property = () => {
   );
 };
 
-const PropertyCard = ({ id, address, image }) => (
+const PropertyCard = ({ id, title, image }) => (
   <Link to={`/property/${id}`} className="property-card">
     <img src={image} alt="Property" className="property-card-img" />
-    <span className="property-card-address">{address}</span>
+    <span className="property-card-address">{title || "Title not available"}</span>
   </Link>
 );
 

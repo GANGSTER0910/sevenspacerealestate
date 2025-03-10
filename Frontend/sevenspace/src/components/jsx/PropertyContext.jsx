@@ -1,10 +1,14 @@
 import { createContext, useState, useEffect } from "react";
 
-const PropertyContext = createContext();
+function createPropertyContext() {
+  return createContext();
+}
+
+const PropertyContext = createPropertyContext();
 
 const API_BASE_URL = "https://sevenspacerealestate.onrender.com";
 
-export function PropertyProvider({ children }) {
+function PropertyProvider({ children }) {
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -19,7 +23,6 @@ export function PropertyProvider({ children }) {
         if (!response.ok) {
           throw new Error(`HTTP error! Status: ${response.status}`);
         }
-        console.log(response);
         const data = await response.json();
         setProperties(data.properties || []);
       } catch (error) {
@@ -40,5 +43,4 @@ export function PropertyProvider({ children }) {
   );
 }
 
-export { PropertyContext };
-export default PropertyProvider;
+export { PropertyContext, PropertyProvider };
