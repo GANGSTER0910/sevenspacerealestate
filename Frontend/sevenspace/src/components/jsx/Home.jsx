@@ -77,7 +77,7 @@ export default function Home() {
                   properties[category].slice(0, n).map((property) => (
                     <PropertyCard 
                       id={property.id} 
-                      address={property.description} 
+                      address={property.title} 
                       image={property.image || ExtraImage} 
                     />
                   ))

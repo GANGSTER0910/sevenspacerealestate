@@ -27,7 +27,7 @@ class admin(BaseModel):
     password: str
             
 class Property(BaseModel):
-    # id: str = Field(default_factory=lambda: str(uuid4()))
+    id: str = Field(default_factory=lambda: str(uuid4()))
     title: str
     description: str
     property_type: str  # e.g., "Apartment", "House", "Commercial"

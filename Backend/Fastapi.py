@@ -216,28 +216,45 @@ async def get_property_by_category(category: str, status: str = "available"):
     if status:  
         query["status"] = status
 
-    properties = list(db1.get_collection('Property').find(query, {"_id": 0}))
+    properties = list(db1.get_collection('Property').find(query,{"_id": 0}))
 
     return {"count": len(properties), "properties": properties}
 
-@app.get("/property/{property_id}")
-async def get_property(property_id: str):
-    try:
-        property_data = db1.get_collection('Property').find_one({"_id": ObjectId(property_id)})
-        if not property_data:
-            raise HTTPException(status_code=404, detail="Property not found")
-        property_data["_id"] = str(property_data["_id"])  # Convert ObjectId to string
-        return property_data
-    except:
-        raise HTTPException(status_code=400, detail="Invalid Property ID")
+@app.get("/property/all")
+async def get_all_properties(status: str = "available"):
+        query = {"status": status} 
+    
+    # Debugging: Check the actual query
+        print(f"Querying database with: {query}")
+    
+        properties = list(db1.get_collection("Property").find({"status": status}))
+        print(properties)
+        for property in properties:
+            property["_id"] = str(property["_id"])
+    # Debugging: Check the retrieved data
+        if not properties:
+            print("No properties found matching the criteria.")
+    
+        return {"count": len(properties), "properties": jsonable_encoder(properties)}
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
     
 
-@app.get("/property/all")
-async def get_all_properties(status: str = "available"):
-    query = {"status": status} if status else {}  # Filter by status if provided
-    properties = list(db1.get_collection("Property").find(query, {"_id": 0}))
+# @app.get("/property/{property_id}")
+# async def get_property(property_id: str):
+#     try:
+#         property_data = db1.get_collection('Property').find_one({"_id": ObjectId(property_id)})
+#         if not property_data:
+#             raise HTTPException(status_code=404, detail="Property not found")
+#         property_data["_id"] = str(property_data["_id"])  # Convert ObjectId to string
+#         return property_data
+#     except:
+#         raise HTTPException(status_code=400, detail="Invalid Property ID")
 
-    return {"count": len(properties), "properties": properties}
+# @app.get("/property/all")
+# async def get_all_properties(status: str = "available"):
+#     query["status"] = status if status else {}  # Filter by status if provided
+#     properties = list(db1.get_collection("Property").find(query, {"_id": 0}))
+#     return {"count": len(properties), "properties": properties}
