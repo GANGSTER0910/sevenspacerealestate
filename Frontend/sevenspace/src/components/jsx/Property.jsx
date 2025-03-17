@@ -4,6 +4,7 @@ import { PropertyContext } from "./PropertyContext";
 import "../css/Property.css"; 
 import ExtraImage from "../../assets/Real Estate.jpg";
 
+
 const Property = () => {
   const { properties } = useContext(PropertyContext);
   const [filters, setFilters] = useState({

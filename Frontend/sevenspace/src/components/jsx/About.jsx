@@ -26,7 +26,6 @@ export default function About() {
             <span className='BOD_Text_edit' id="BOD_Desc">The proud owner and managing director of the City Estate Management , Founder – President of Ahmedabad Realtors Association and Ex-Vice President of NAR, India & Chairman (PR & Communication) of NAR, India being first in this service industry builds professionalism and creates a corporate culture in Real Estate Consulting Business. He leads strategic planning and corporate development across the group’s portfolio of real estate businesses. He is leading teams across client services, projects, editorial and marketing. As a leader of the company, he advises the management team, motivates employees, and drives change within the organization. Mr. Pravin Bavadiya has given employment to middle class unemployed people and moreover in those 200 and more has their own offices now. A successfully completed 22 years, setting a benchmark in real estate management with only a motto to be transparent in all dealings and satisfy customers at any cost. </span>
           </div>
         </div>
-        
       </div>
     </div>
   )

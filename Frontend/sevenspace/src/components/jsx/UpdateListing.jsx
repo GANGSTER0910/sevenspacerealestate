@@ -83,6 +83,7 @@ const UpdateListing = () => {
     }
   };
 
+  
   const storeImage = async (file) => {
     return new Promise((resolve, reject) => {
       const storage = getStorage(app);

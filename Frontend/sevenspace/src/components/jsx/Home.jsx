@@ -25,6 +25,7 @@ export default function Home() {
     return acc;
   }, {});
 
+  
   return (
     <div id="Home_Main">
       <div id="Home_Heading">

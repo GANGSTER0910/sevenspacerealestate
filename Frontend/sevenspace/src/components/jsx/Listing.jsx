@@ -27,10 +27,6 @@ const Listing = () => {
   const [error, setError] = useState(false);
     const [copied, setCopied] = useState(false);
     const [contact, setContact] = useState(false);
-
-
-
-
     const { currentUser } = useSelector((state) => state.user);
 
   console.log(listing);

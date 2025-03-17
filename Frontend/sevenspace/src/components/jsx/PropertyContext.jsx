@@ -8,6 +8,7 @@ const PropertyContext = createPropertyContext();
 
 const API_BASE_URL = "https://sevenspacerealestate.onrender.com";
 
+
 function PropertyProvider({ children }) {
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);

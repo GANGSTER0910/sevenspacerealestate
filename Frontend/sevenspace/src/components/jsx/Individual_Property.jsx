@@ -77,6 +77,7 @@ const IndividualProperty = () => {
     return <p>Property not found.</p>;
   }
 
+  
   return (
     <div className="property-detail-container">
       <div className="property-detail-content">
