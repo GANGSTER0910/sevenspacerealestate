@@ -1,60 +1,3 @@
-// import { useContext } from "react";
-// import { useParams } from "react-router-dom";
-// import ExtraImage from "../../assets/Real Estate.jpg";
-// import "../css/Individual_Property.css";
-
-// const API_BASE_URL = "https://sevenspacerealestate.onrender.com"; 
-
-// const IndividualProperty = () => {
-//   const { id } = useParams();
-//   const [property, setProperty] = useState(null);
-//   const [loading, setLoading] = useState(true);
-
-//   useEffect(() => {
-//     const fetchProperty = async () => {
-//       try {
-//         const response = await fetch(`${API_BASE_URL}/property/${id}`);
-//         const data = await response.json();
-//         setProperty(data.property || null);
-//       } catch (error) {
-//         console.error("Error fetching property details:", error);
-//       } finally {
-//         setLoading(false);
-//       }
-//     };
-
-//     fetchProperty();
-//   }, [id]);
-
-//   if (loading) {
-//     return <p>Loading property details...</p>;
-//   }
-
-//   if (!property) {
-//     return <p>Property not found.</p>;
-//   }
-
-//   return (
-//     <div className="property-detail-container">
-//       <div className="property-detail-content">
-//         <h1 className="property-title">{property.type} for Rent</h1>
-//         <div className="property-image-container">
-//           <img src={property.image || ExtraImage} alt={property.type} className="property-image" />
-//         </div>
-//         <div className="property-details">
-//           <h2>{property.address}</h2>
-//           <p><strong>Price: </strong>₹{property.price}</p>
-//           <p><strong>Area: </strong>{property.area_sqft} sq.ft.</p>
-//           <p><strong>Bedrooms: </strong>{property.bedrooms}</p>
-//           <p><strong>Bathrooms: </strong>{property.bathrooms}</p>
-//           <p><strong>Amenities: </strong>{property.amenities?.join(", ") || "N/A"}</p>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default IndividualProperty;
 import { useContext } from "react";
 import { useParams } from "react-router-dom";
 import { PropertyContext } from "./PropertyContext";
@@ -65,32 +8,54 @@ const API_BASE_URL = "https://sevenspacerealestate.onrender.com";
 
 const IndividualProperty = () => {
   const { id } = useParams();
-  const { allProperties, loading } = useContext(PropertyContext);
+  const { properties, loading } = useContext(PropertyContext);
 
   if (loading) {
-    return <p>Loading property details...</p>;
+    return <p className="loading-message">Loading property details...</p>;
   }
 
-  const property = allProperties?.find((prop) => prop.id === id);
+  if (!properties || properties.length === 0) {
+    return <p className="error-message">No properties available.</p>;
+  }
+
+  const property = properties.find((prop) => String(prop.id) === id);
 
   if (!property) {
-    return <p>Property not found.</p>;
+    return <p className="error-message">Property not found.</p>;
   }
 
-  
   return (
     <div className="property-detail-container">
       <div className="property-detail-content">
         <h1 className="property-title">{property.property_type} for Rent</h1>
+        
+        {/* Property Images */}
         <div className="property-image-container">
-          <img src={property.image || ExtraImage} alt={property.property_type} className="property-image" />
+          {property.images && property.images.length > 0 ? (
+            property.images.map((image, index) => (
+              <img 
+                key={index} 
+                src={`${API_BASE_URL}/uploads/${image}`} 
+                alt={property.title} 
+                className="property-image"
+              />
+            ))
+          ) : (
+            <img src={ExtraImage} alt="Default Property" className="property-image" />
+          )}
         </div>
+
+        {/* Property Details */}
         <div className="property-details">
-          <h2>{property.description}</h2>
+          <h2>{property.title}</h2>
+          <p><strong>Description: </strong>{property.description}</p>
+          <p><strong>Location: </strong>{property.location}</p>
           <p><strong>Price: </strong>₹{property.price}</p>
           <p><strong>Area: </strong>{property.area_sqft ?? "Not specified"} sq.ft.</p>
           <p><strong>Bedrooms: </strong>{property.bedrooms ?? "N/A"}</p>
           <p><strong>Bathrooms: </strong>{property.bathrooms ?? "N/A"}</p>
+          <p><strong>Status: </strong>{property.status}</p>
+          <p><strong>Listed Date: </strong>{property.listed_date}</p>
           <p><strong>Amenities: </strong>{property.amenities?.join(", ") || "N/A"}</p>
         </div>
       </div>
