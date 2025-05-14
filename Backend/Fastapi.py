@@ -11,6 +11,7 @@ from jwt import JWT, jwk_from_dict
 from typing import Optional
 from bson import ObjectId
 from schema import *
+import gridfs
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 import random
@@ -59,7 +60,7 @@ oauth.register(
         'redirect_url': 'https://sevenspacerealestate.onrender.com/auth'
     }
 )
-
+fs = gridfs.GridFS(db1)
 def get_password_hash(password):
     return pwd_context.hash(password)
 
@@ -191,8 +192,12 @@ async def google_auth(request: Request):
 
 
 @app.post("/property")
-async def add_property(property: Property):
+async def add_property(property: Property, files: List[UploadFile] = File(...)):
     # property_data = property.dict() 
+    image_ids = []
+    for file in files:
+        image_id = fs.put(file.file, filename=file.filename)
+        image_ids.append(str(image_id))
     normalized_title = property.title.strip().lower()
     if not property.listed_date:
         property.listed_date = datetime.now().strftime("%Y-%m-%d")
@@ -203,6 +208,7 @@ async def add_property(property: Property):
     if existing_property:
         raise HTTPException(status_code=400, detail="Property already exists.")
     property_data = property.dict()
+    property_data["images"] = image_ids
     property_data["title"] = normalized_title
     property_data["location"] = property.location.strip()
     result = db1.get_collection('Property').insert_one(property_data)
