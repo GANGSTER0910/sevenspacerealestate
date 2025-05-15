@@ -109,45 +109,46 @@ async def check(request: Request):
         return JSONResponse(status_code=307, content={"message": "Cookie Not Found"})
 
 @app.post("/user")
-async def create_user(user : User):
+async def create_user(user: User):
     try:
+        # Check if user already exists
+        existing_user = db1.get_collection('User').find_one({"email": user.email})
+        if existing_user:
+            raise HTTPException(400, detail="Email already registered")
+
         user_dict = user.model_dump()
         user_dict["password"] = get_password_hash(user_dict["password"])
+        result = db1.get_collection('User').insert_one(user_dict)
+        
+        # Convert ObjectId to string
+        user_dict["_id"] = str(result.inserted_id)
+        
         expire_timedelta = timedelta(minutes=access_token_expire_time)
-        user_token = create_access_token(user_dict,expire_timedelta)
-        db1.get_collection('User').insert_one(user_dict)
+        user_token = create_access_token(user_dict, expire_timedelta)
         return create_cookie(user_token)
-        # return "Succesfully"
-    except:
-        raise HTTPException(400)
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        raise HTTPException(400, detail=str(e))
 
 @app.post("/user/login")
 async def user_login(user: User_login):
-        user_dict = db1.get_collection('User').find_one({"email":user.email}, {"_id ":0})
+    try:
+        user_dict = db1.get_collection('User').find_one({"email": user.email})
         if user_dict:
-            if verify_password(user.password, user_dict.get("password","")):
+            if verify_password(user.password, user_dict.get("password", "")):
+                # Convert ObjectId to string before creating token
+                user_dict["_id"] = str(user_dict["_id"])
                 expire_timedelta = timedelta(minutes=access_token_expire_time)
-                user_token = create_access_token(user_dict,expire_timedelta)
+                user_token = create_access_token(user_dict, expire_timedelta)
                 return create_cookie(user_token)
             else:
                 raise HTTPException(400, detail="Invalid Password")
-
-@app.post("/generate-otp")
-def send_otp_via_sendgrid(receiver_email:otp, response : Response):
-    otp = str(random.randint(100000, 999999))
-    message = Mail(
-        from_email='harsh.panchal.0910@gmail.com',
-        to_emails=receiver_email.email,
-        subject='Your OTP for Registration',
-        plain_text_content=f'Your OTP is: {otp}\nPlease do not share this with anyone.')
-
-    try:
-        sg = SendGridAPIClient(SEND_GRID_API)
-        response = sg.send(message)
-        response.set_cookie(key=f"otp_{receiver_email.email}", value=otp,httponly=True, secure=True, samesite='none', max_age=180)
-        return {"message": "OTP sent successfully!", "otp": otp, "status_code": response.status_code}   
+        else:
+            raise HTTPException(400, detail="User not found")
     except Exception as e:
-        return {"error": str(e)}
+        raise HTTPException(400, detail=str(e))
+
     
 @app.post("/verifyotp")
 async def verify_otp(otp : otp_verify, otp_cookie : str=Cookie(None)):
@@ -224,9 +225,11 @@ async def get_property_by_category(category: str, status: str = "available"):
     if status:  
         query["status"] = status
 
-    properties = list(db1.get_collection('Property').find(query,{"_id": 0}))
+    properties = list(db1.get_collection('Property').find(query))
+    for property in properties:
+        property["_id"] = str(property["_id"])
 
-    return {"count": len(properties), "properties": properties}
+    return {"count": len(properties), "properties": jsonable_encoder(properties)}
 
 @app.get("/property/all")
 async def get_all_properties(status: str = "available"):
@@ -244,6 +247,18 @@ async def get_all_properties(status: str = "available"):
             print("No properties found matching the criteria.")
     
         return {"count": len(properties), "properties": jsonable_encoder(properties)}
+
+@app.get("/property/{property_id}")
+async def get_property(property_id: str):
+    try:
+        property_data = db1.get_collection('Property').find_one({"_id": ObjectId(property_id)})
+        if not property_data:
+            raise HTTPException(status_code=404, detail="Property not found")
+        property_data["_id"] = str(property_data["_id"])
+        return property_data
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
 @app.post("/contact")
 async def submit_contact_form(contact: Contact):
     try:
@@ -259,7 +274,7 @@ async def submit_contact_form(contact: Contact):
         email = SendSmtpEmail(
     to=[{"email": f"{to_email}", "name": f"{to_name}"}],
     sender={"email": "harsh.p4@ahduni.edu.in", "name": "Sevenspace"},
-    subject="Hello from Brevo (Direct Email)",
+    subject="Welcome to Seven Space Real Estate",
     html_content="""
         <html>
   <body style="font-family: Arial, sans-serif; background-color: #f9f9f9; padding: 20px;">
@@ -308,9 +323,17 @@ async def submit_contact_form(contact: Contact):
 
         try:
             response = api_instance.send_transac_email(email)
-            print("✅ Email sent successfully!")
+            print("Email sent successfully!")
         except ApiException as e:
-            print(f"❌ Failed to send email: {e}")
+            print(f"Failed to send email: {e}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@app.get("/contact/messages")
+async def get_contact_messages():
+    try:
+        messages = list(db1.get_collection('Contact').find({}, {"_id": 0}))
+        return {"messages": messages}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
