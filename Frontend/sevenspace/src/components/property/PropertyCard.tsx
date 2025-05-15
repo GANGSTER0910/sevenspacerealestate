@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link } from "react-router-dom";
 import { Property } from "@/types/property";
@@ -27,7 +26,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
 
   return (
     <Link 
-      to={`/property/${property.id}`} 
+      to={`/property/${property._id}`} 
       className="group block rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300"
     >
       <div className="relative">

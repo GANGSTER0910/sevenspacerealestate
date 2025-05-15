@@ -1,5 +1,4 @@
-
-import React from "react";
+import React, { useState } from "react";
 import Layout from "@/components/layout/Layout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,15 +7,68 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Mail, Phone, MapPin } from "lucide-react";
 
+interface ContactFormData {
+  name: string;
+  email: string;
+  subject: string;
+  content: string;
+}
+
 const ContactPage: React.FC = () => {
   const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState<ContactFormData>({
+    name: "",
+    email: "",
+    subject: "",
+    content: "",
+  });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { id, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [id]: value
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: "Message sent",
-      description: "We'll get back to you as soon as possible.",
-    });
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch("http://localhost:8000/contact", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+      
+      if (response.ok) {
+        toast({
+          title: "Message sent successfully",
+          description: "We'll get back to you as soon as possible.",
+        });
+        // Reset form
+        setFormData({
+          name: "",
+          email: "",
+          subject: "",
+          content: "",
+        });
+      } else {
+        throw new Error("Failed to send message");
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to send message. Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -44,7 +96,7 @@ const ContactPage: React.FC = () => {
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Phone</p>
-                      <p className="font-medium">+1 (555) 123-4567</p>
+                      <p className="font-medium">+91 99251 11624</p>
                     </div>
                   </div>
                   
@@ -54,7 +106,7 @@ const ContactPage: React.FC = () => {
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Email</p>
-                      <p className="font-medium">info@sevenspace.com</p>
+                      <p className="font-medium"> pravin.sachaniya@gmail.com</p>
                     </div>
                   </div>
                   
@@ -64,8 +116,7 @@ const ContactPage: React.FC = () => {
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Address</p>
-                      <p className="font-medium">123 Main Street, Suite 300</p>
-                      <p className="text-sm">New York, NY 10001</p>
+                      <p className="font-medium"> B – 435, SOBO Center, South Bopal, Ahmedabad – 380058</p>
                     </div>
                   </div>
                 </div>
@@ -82,13 +133,26 @@ const ContactPage: React.FC = () => {
                       <label htmlFor="name" className="text-sm font-medium">
                         Full Name
                       </label>
-                      <Input id="name" placeholder="Enter your name" required />
+                      <Input 
+                        id="name" 
+                        placeholder="Enter your name" 
+                        required 
+                        value={formData.name}
+                        onChange={handleInputChange}
+                      />
                     </div>
                     <div className="space-y-2">
                       <label htmlFor="email" className="text-sm font-medium">
                         Email Address
                       </label>
-                      <Input id="email" type="email" placeholder="abc@example.com" required />
+                      <Input 
+                        id="email" 
+                        type="email" 
+                        placeholder="abc@example.com" 
+                        required 
+                        value={formData.email}
+                        onChange={handleInputChange}
+                      />
                     </div>
                   </div>
                   
@@ -96,23 +160,35 @@ const ContactPage: React.FC = () => {
                     <label htmlFor="subject" className="text-sm font-medium">
                       Subject
                     </label>
-                    <Input id="subject" placeholder="How can we help you?" required />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <label htmlFor="message" className="text-sm font-medium">
-                      Message
-                    </label>
-                    <Textarea
-                      id="message"
-                      placeholder="Write your message here..."
-                      className="min-h-[150px]"
-                      required
+                    <Input 
+                      id="subject" 
+                      placeholder="How can we help you?" 
+                      required 
+                      value={formData.subject}
+                      onChange={handleInputChange}
                     />
                   </div>
                   
-                  <Button type="submit" className="w-full md:w-auto">
-                    Send Message
+                  <div className="space-y-2">
+                    <label htmlFor="content" className="text-sm font-medium">
+                      Message
+                    </label>
+                    <Textarea
+                      id="content"
+                      placeholder="Write your message here..."
+                      className="min-h-[150px]"
+                      required
+                      value={formData.content}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                  
+                  <Button 
+                    type="submit" 
+                    className="w-full md:w-auto"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? "Sending..." : "Send Message"}
                   </Button>
                 </form>
               </CardContent>

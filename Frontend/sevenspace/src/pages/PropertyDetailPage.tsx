@@ -29,16 +29,24 @@ const PropertyDetailPage: React.FC = () => {
       try {
         if (!id) throw new Error('Property ID is required');
         const data = await propertyService.getById(id);
+        if (!data) {
+          throw new Error('Property not found');
+        }
         setProperty(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load property');
+        toast({
+          title: "Error",
+          description: "Failed to load property details. Please try again later.",
+          variant: "destructive",
+        });
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchProperty();
-  }, [id]);
+  }, [id, toast]);
 
   if (isLoading) {
     return (
