@@ -12,8 +12,6 @@ from typing import Optional
 from bson import ObjectId
 from schema import *
 import gridfs
-from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail
 import random
 from fastapi.templating import Jinja2Templates
 from starlette.requests import Request
@@ -21,6 +19,10 @@ from starlette.responses import RedirectResponse
 from starlette.middleware.sessions import SessionMiddleware
 from authlib.integrations.starlette_client import OAuth, OAuthError
 from fastapi.staticfiles import StaticFiles
+from sib_api_v3_sdk import Configuration, ApiClient
+from sib_api_v3_sdk.api.transactional_emails_api import TransactionalEmailsApi
+from sib_api_v3_sdk.models.send_smtp_email import SendSmtpEmail
+from sib_api_v3_sdk.rest import ApiException
 app = FastAPI()
 load_dotenv()
 origins = [
@@ -44,7 +46,7 @@ db1 = client1['SSRealEstate']
 algorithm = os.getenv("Alogrithm")
 access_token_expire_time = int(os.getenv("Access_Token_Expire_Time"))
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated= "auto")
-SEND_GRID_API = os.getenv("SEND_GRID_API_KEY")
+BREVO_KEY = os.getenv("Brevo_key")
 app.add_middleware(SessionMiddleware,
     secret_key = Secret_key,)
 CLIENT_ID = os.getenv('CLIENT_ID')
@@ -248,39 +250,67 @@ async def submit_contact_form(contact: Contact):
         # Store contact form data in database
         contact_data = contact.dict()
         db1.get_collection('Contact').insert_one(contact_data)
-
+        to_email = contact_data["email"]
+        to_name = contact_data["name"]
         # Send email using SendGrid
-        message = Mail(
-            from_email=contact.email,
-            to_emails='harsh.panchal.0910@gmail.com',  # Your company's email address
-            subject=f'New Contact Form Submission: {contact.subject}',
-            html_content=f'''
-                <h3>New Contact Form Submission</h3>
-                <p><strong>Name:</strong> {contact.name}</p>
-                <p><strong>Email:</strong> {contact.email}</p>
-                <p><strong>Subject:</strong> {contact.subject}</p>
-                <p><strong>Message:</strong></p>
-                <p>{contact.content}</p>
-                <p><strong>Date:</strong> {contact.created_date}</p>
-            '''
-        )
-        
+        configuration = Configuration()
+        configuration.api_key['api-key'] = os.getenv('Brevo_key')
+# Step 2: Compose your email
+        email = SendSmtpEmail(
+    to=[{"email": f"{to_email}", "name": f"{to_name}"}],
+    sender={"email": "harsh.p4@ahduni.edu.in", "name": "Sevenspace"},
+    subject="Hello from Brevo (Direct Email)",
+    html_content="""
+        <html>
+  <body style="font-family: Arial, sans-serif; background-color: #f9f9f9; padding: 20px;">
+    <table width="100%" style="max-width: 600px; margin: auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.1);">
+      <tr>
+        <td style="background-color: #0055a5; padding: 20px; text-align: center;">
+          <img src="https://i.imgur.com/1ZfH5EN.png" alt="Seven Space Real Estate" width="120" />
+        </td>
+      </tr>
+      <tr>
+        <td style="padding: 30px;">
+          <h2 style="color: #0055a5; margin-top: 0;">Thank You for Reaching Out!</h2>
+          <p style="font-size: 16px; color: #333;">
+            Dear Customer,
+          </p>
+          <p style="font-size: 16px; color: #333;">
+            We appreciate your interest in <strong>Seven Space Real Estate</strong> – your ideal property solution. Our team will get back to you shortly with tailored property options that best match your requirements.
+          </p>
+          <p style="font-size: 16px; color: #333;">
+            In the meantime, if you have any urgent questions or would like to speak to us directly, please feel free to contact:
+          </p>
+          <ul style="list-style: none; padding-left: 0; font-size: 16px; color: #333;">
+            <li><strong>Pravin Sachaniya</strong>, Real Estate Agent</li>
+            <li>📞 +91 99251 11624</li>
+            <li>📧 pravin.sachaniya@gmail.com</li>
+            <li>📍 B – 435, SOBO Center, South Bopal, Ahmedabad – 380058</li>
+          </ul>
+          <p style="font-size: 16px; color: #333;">
+            Thank you again for choosing Seven Space. We look forward to helping you find your perfect property!
+          </p>
+        </td>
+      </tr>
+      <tr>
+        <td style="background-color: #f1f1f1; text-align: center; padding: 15px; font-size: 14px; color: #666;">
+          © Seven Space Real Estate – Ahmedabad Realtors Association | NAR India | World Properties
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>"""
+)
+
+# Step 3: Send the email
+        api_client = ApiClient(configuration)
+        api_instance = TransactionalEmailsApi(api_client)
+
         try:
-            SEND_GRID_API = os.getenv("SEND_GRID_API_KEY")
-            print(SEND_GRID_API)
-            sg = SendGridAPIClient(SEND_GRID_API)
-            if not SEND_GRID_API:
-                raise ValueError("SendGrid API key is not configured")
-            response = sg.send(message)
-        except Exception as e:
-            print(f"SendGrid Error: {str(e)}")
-            raise HTTPException(status_code=401, detail="Unauthorized: Invalid SendGrid API key")
-
-        if response.status_code >= 200 and response.status_code < 300:
-            return {"message": "Contact form submitted successfully"}
-        else:
-            raise HTTPException(status_code=500, detail="Failed to send email")
-
+            response = api_instance.send_transac_email(email)
+            print("✅ Email sent successfully!")
+        except ApiException as e:
+            print(f"❌ Failed to send email: {e}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
