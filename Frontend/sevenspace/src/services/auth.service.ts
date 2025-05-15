@@ -1,4 +1,4 @@
-import fetchApi from '@/lib/api';
+import { fetchApi } from './api';
 
 export interface LoginCredentials {
   email: string;
@@ -23,7 +23,6 @@ export interface OTPVerifyData {
 
 export interface AuthResponse {
   message: string;
-  status_code?: number;
 }
 
 export const authService = {
@@ -31,6 +30,7 @@ export const authService = {
     return fetchApi('/user/login', {
       method: 'POST',
       body: JSON.stringify(credentials),
+      credentials: 'include', // Important for cookies
     });
   },
 
@@ -38,6 +38,7 @@ export const authService = {
     return fetchApi('/user', {
       method: 'POST',
       body: JSON.stringify(data),
+      credentials: 'include', // Important for cookies
     });
   },
 
@@ -49,6 +50,7 @@ export const authService = {
   async checkAuth(): Promise<{ message: string }> {
     return fetchApi('/checkAuthentication', {
       method: 'POST',
+      credentials: 'include', // Important for cookies
     });
   },
 
