@@ -48,13 +48,12 @@ class Agent(BaseModel):
     agency_name: Optional[str] = None
     properties_listed: Optional[List[str]] = []  # List of property IDs listed by the agent
 
-class Announcement(BaseModel):
-    title: str
+class Contact(BaseModel):
+    name: str
+    email: str
+    subject: str
     content: str
-    img: str # URL for an image associated with the announcement
-    by: str  # Name of the person or entity posting the announcement
     created_date: Optional[datetime] = Field(default_factory=datetime.utcnow)
-    likes: Optional[int] = 0
 
 class Transaction(BaseModel):
     property_id: str

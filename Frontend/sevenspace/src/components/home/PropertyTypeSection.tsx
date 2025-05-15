@@ -1,7 +1,7 @@
-
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
+import { propertyService } from "@/services/property.service";
 
 interface PropertyTypeCardProps {
   type: string;
@@ -36,12 +36,37 @@ const PropertyTypeCard: React.FC<PropertyTypeCardProps> = ({ type, title, image,
 };
 
 const PropertyTypeSection: React.FC = () => {
+  const [propertyCounts, setPropertyCounts] = useState<Record<string, number>>({});
+  const [isLoading, setIsLoading] = useState(true);
+
   const propertyTypes = [
-    { type: "apartment", title: "Apartments", image: "/lovable-uploads/5f8c14d4-6d14-4ff2-8844-b9bfecf97271.png", count: 24 },
-    { type: "flat", title: "Flats", image: "/lovable-uploads/5db3b84e-3519-4a36-98c1-b19371c9b938.png", count: 15 },
-    { type: "pg", title: "PGs", image: "/lovable-uploads/54bf8a19-b756-4f09-b13e-93f23aae4b85.png", count: 18 },
-    { type: "hostel", title: "Hostels", image: "/lovable-uploads/8e25e883-2f3e-4416-8192-5ea5cea42c52.png", count: 9 },
+    { type: "Apartment", title: "Apartments", image: "/lovable-uploads/5f8c14d4-6d14-4ff2-8844-b9bfecf97271.png" },
+    { type: "Flat", title: "Flats", image: "/lovable-uploads/5db3b84e-3519-4a36-98c1-b19371c9b938.png" },
+    { type: "PG", title: "PGs", image: "/lovable-uploads/54bf8a19-b756-4f09-b13e-93f23aae4b85.png" },
+    { type: "Hostel", title: "Hostels", image: "/lovable-uploads/8e25e883-2f3e-4416-8192-5ea5cea42c52.png" },
   ];
+
+  useEffect(() => {
+    const fetchPropertyCounts = async () => {
+      try {
+        const counts: Record<string, number> = {};
+        
+        // Fetch counts for each property type
+        for (const type of propertyTypes) {
+          const response = await propertyService.getAll({ category: type.type });
+          counts[type.type] = response.count;
+        }
+        
+        setPropertyCounts(counts);
+      } catch (error) {
+        console.error('Error fetching property counts:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchPropertyCounts();
+  }, []);
 
   return (
     <section className="py-12 bg-gray-50">
@@ -55,7 +80,11 @@ const PropertyTypeSection: React.FC = () => {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {propertyTypes.map((type) => (
-            <PropertyTypeCard key={type.type} {...type} />
+            <PropertyTypeCard 
+              key={type.type} 
+              {...type} 
+              count={isLoading ? 0 : propertyCounts[type.type] || 0} 
+            />
           ))}
         </div>
       </div>

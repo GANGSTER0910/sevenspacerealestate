@@ -1,4 +1,5 @@
-import React from "react";
+import { useEffect, useState } from 'react';
+import React from 'react';
 import { useParams, Link } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
@@ -6,10 +7,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getPropertyById } from "@/services/propertyService";
 import { useToast } from "@/components/ui/use-toast";
 import { MapPin, Bed, Bath, Square, Heart, Share, Calendar, User } from "lucide-react";
+import { propertyService, Property } from '@/services/property.service';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 const PropertyDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const property = getPropertyById(id || "");
+  const [property, setProperty] = useState<Property | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   
   // Add loading states for buttons
@@ -18,17 +24,35 @@ const PropertyDetailPage: React.FC = () => {
   // Add state to track if the property is favorited
   const [isFavorited, setIsFavorited] = React.useState(false);
   
-  if (!property) {
+  useEffect(() => {
+    const fetchProperty = async () => {
+      try {
+        if (!id) throw new Error('Property ID is required');
+        const data = await propertyService.getById(id);
+        setProperty(data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load property');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProperty();
+  }, [id]);
+
+  if (isLoading) {
     return (
-      <Layout>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">
-          <h2 className="text-2xl font-bold text-gray-900">Property Not Found</h2>
-          <p className="mt-2 text-gray-500">The property you're looking for doesn't exist or has been removed.</p>
-          <Link to="/property" className="mt-6 inline-block">
-            <Button>Browse Properties</Button>
-          </Link>
-        </div>
-      </Layout>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+      </div>
+    );
+  }
+
+  if (error || !property) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-red-500">Error: {error || 'Property not found'}</div>
+      </div>
     );
   }
   
@@ -130,13 +154,13 @@ const PropertyDetailPage: React.FC = () => {
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <Square className="h-5 w-5 text-realestate-primary mb-2" />
                     <div className="text-sm text-gray-500">Area</div>
-                    <div className="font-semibold">{property.area} sq.ft.</div>
+                    <div className="font-semibold">{property.area_sqft} sq.ft.</div>
                   </div>
                   
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <Calendar className="h-5 w-5 text-realestate-primary mb-2" />
                     <div className="text-sm text-gray-500">Listed Date</div>
-                    <div className="font-semibold">{property.listedDate}</div>
+                    <div className="font-semibold">{property.listed_date}</div>
                   </div>
                 </div>
                 
@@ -179,7 +203,7 @@ const PropertyDetailPage: React.FC = () => {
               <div className="text-2xl font-bold text-realestate-primary mb-2">
                 {formatPrice(property.price)}
                 <span className="text-sm font-normal text-gray-500 ml-1">
-                  {property.type === 'pg' || property.type === 'hostel' ? '/month' : ''}
+                  {property.property_type === 'pg' || property.property_type === 'hostel' ? '/month' : ''}
                 </span>
               </div>
               

@@ -1,29 +1,42 @@
-
 import React, { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import PropertyGrid from "@/components/property/PropertyGrid";
 import PropertyFilter from "@/components/property/PropertyFilter";
-import { getAllProperties, filterProperties } from "@/services/propertyService";
 import { PropertyFilterOptions, Property } from "@/types/property";
 import { toast } from "sonner";
+import { PropertyFilters, propertyService, useProperties } from '@/services/property.service';
+import { filterProperties } from "@/services/propertyService";
 
 const PropertyPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const typeFromUrl = searchParams.get("type");
-  
-  const [allProperties] = useState(getAllProperties());
-  const [filteredProperties, setFilteredProperties] = useState<Property[]>(
-    typeFromUrl 
-      ? allProperties.filter(prop => prop.type === typeFromUrl)
-      : allProperties
-  );
-  
+  // Backend data
+  const [filterOptions, setFilterOptions] = useState<PropertyFilters>({});
+  const { data, isLoading, error } = useProperties(filterOptions);
+  const allProperties = data?.properties || [];
+  const [filteredProperties, setFilteredProperties] = useState<Property[]>([]);
+  // const [allProperties, setAllProperties] = useState<Property[]>([]);
+  // const [filteredProperties, setFilteredProperties] = useState<Property[]>([]);
+  const [loading, setLoading] = useState(true);
+
+
   // Apply the type filter from URL when component mounts or URL changes
   useEffect(() => {
     if (typeFromUrl) {
-      const typeFiltered = allProperties.filter(prop => prop.type === typeFromUrl);
-      setFilteredProperties(typeFiltered);
+      setFilterOptions((prev) => ({ ...prev, type: typeFromUrl }));
+    }
+  }, [typeFromUrl]);
+
+  // Update filteredProperties when backend data changes
+  useEffect(() => {
+    setFilteredProperties(allProperties as unknown as Property[]);
+  }, [allProperties]);
+
+  useEffect(() => {
+    if (typeFromUrl) {
+      const typeFiltered = allProperties.filter((prop: any) => prop.type === typeFromUrl);
+      setFilteredProperties(typeFiltered as unknown as Property[]);
       
       if (typeFiltered.length === 0) {
         toast.info(`No ${typeFromUrl} properties found.`);
@@ -31,7 +44,7 @@ const PropertyPage: React.FC = () => {
         toast.success(`Found ${typeFiltered.length} ${typeFromUrl} properties.`);
       }
     } else {
-      setFilteredProperties(allProperties);
+      setFilteredProperties(allProperties as unknown as Property[]);
     }
   }, [typeFromUrl, allProperties]);
   
@@ -56,7 +69,8 @@ const PropertyPage: React.FC = () => {
       toast.error("Error applying filters. Please try again.");
     }
   };
-  
+
+
   return (
     <Layout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -70,19 +84,26 @@ const PropertyPage: React.FC = () => {
             Browse our selection of properties and find your perfect space
           </p>
         </div>
-        
         <div className="flex flex-col lg:flex-row gap-8">
           <aside className="lg:w-1/4">
             <PropertyFilter onFilter={handleFilter} initialType={typeFromUrl || undefined} />
           </aside>
-          
           <main className="lg:w-3/4">
-            {filteredProperties.length === 0 ? (
+            {isLoading ? (
+              <div className="bg-gray-50 p-8 rounded-lg text-center">
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Loading properties...</h3>
+              </div>
+            ) : error ? (
+              <div className="bg-gray-50 p-8 rounded-lg text-center">
+                <h3 className="text-lg font-medium text-red-600 mb-2">Error loading properties</h3>
+                <p className="text-gray-600">{error instanceof Error ? error.message : 'Unknown error'}</p>
+              </div>
+            ) : filteredProperties.length === 0 ? (
               <div className="bg-gray-50 p-8 rounded-lg text-center">
                 <h3 className="text-lg font-medium text-gray-900 mb-2">No properties found</h3>
                 <p className="text-gray-600">Try adjusting your search filters or browse all properties.</p>
                 <button 
-                  onClick={() => setFilteredProperties(allProperties)}
+                  onClick={() => setFilterOptions({})}
                   className="mt-4 px-4 py-2 bg-realestate-primary text-white rounded-md hover:bg-realestate-secondary"
                 >
                   View All Properties

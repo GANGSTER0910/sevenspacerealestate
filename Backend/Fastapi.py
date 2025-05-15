@@ -27,7 +27,7 @@ origins = [
     "http://localhost:5173",
     "http://localhost:8000",
     "https://sevenspacerealestate.vercel.app",
-    "http://localhost:5174",
+    "http://localhost:3000",
     ]  
 
 Secret_key = os.getenv("SECRET_KEY")
@@ -242,6 +242,47 @@ async def get_all_properties(status: str = "available"):
             print("No properties found matching the criteria.")
     
         return {"count": len(properties), "properties": jsonable_encoder(properties)}
+@app.post("/contact")
+async def submit_contact_form(contact: Contact):
+    try:
+        # Store contact form data in database
+        contact_data = contact.dict()
+        db1.get_collection('Contact').insert_one(contact_data)
+
+        # Send email using SendGrid
+        message = Mail(
+            from_email=contact.email,
+            to_emails='harsh.panchal.0910@gmail.com',  # Your company's email address
+            subject=f'New Contact Form Submission: {contact.subject}',
+            html_content=f'''
+                <h3>New Contact Form Submission</h3>
+                <p><strong>Name:</strong> {contact.name}</p>
+                <p><strong>Email:</strong> {contact.email}</p>
+                <p><strong>Subject:</strong> {contact.subject}</p>
+                <p><strong>Message:</strong></p>
+                <p>{contact.content}</p>
+                <p><strong>Date:</strong> {contact.created_date}</p>
+            '''
+        )
+        
+        try:
+            SEND_GRID_API = os.getenv("SEND_GRID_API_KEY")
+            print(SEND_GRID_API)
+            sg = SendGridAPIClient(SEND_GRID_API)
+            if not SEND_GRID_API:
+                raise ValueError("SendGrid API key is not configured")
+            response = sg.send(message)
+        except Exception as e:
+            print(f"SendGrid Error: {str(e)}")
+            raise HTTPException(status_code=401, detail="Unauthorized: Invalid SendGrid API key")
+
+        if response.status_code >= 200 and response.status_code < 300:
+            return {"message": "Contact form submitted successfully"}
+        else:
+            raise HTTPException(status_code=500, detail="Failed to send email")
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
     import uvicorn

@@ -82,13 +82,13 @@ const ContactPage: React.FC = () => {
                       <label htmlFor="name" className="text-sm font-medium">
                         Full Name
                       </label>
-                      <Input id="name" placeholder="John Doe" required />
+                      <Input id="name" placeholder="Enter your name" required />
                     </div>
                     <div className="space-y-2">
                       <label htmlFor="email" className="text-sm font-medium">
                         Email Address
                       </label>
-                      <Input id="email" type="email" placeholder="john@example.com" required />
+                      <Input id="email" type="email" placeholder="abc@example.com" required />
                     </div>
                   </div>
                   
