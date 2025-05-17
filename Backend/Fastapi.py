@@ -87,7 +87,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
 
 def create_cookie(token:str):
     response = JSONResponse(content= "Thank You! Succesfully Completed ")
-    response.set_cookie(key="session",value=token,httponly=True,secure=True, samesite='none',max_age=3600)
+    response.set_cookie(key="session",value=token,httponly=True,secure=False, samesite='none',max_age=3600)
     return response
 
 def getcookie(token:str):
@@ -102,11 +102,31 @@ def verify_password(plain_password, hashed_password):
 @app.post('/checkAuthentication')
 async def check(request: Request):
     session = request.cookies.get('session')
-    print(session )
     if session:
-        return JSONResponse(status_code=200, content={"message": "Authenticated"})
-    else:
-        return JSONResponse(status_code=307, content={"message": "Cookie Not Found"})
+        try:
+            # Decode the JWT token to get user information
+            jwt_instance = JWT()
+            secret_key = jwk_from_dict({
+                "k": Secret_key,
+                "kty": "oct"
+            })
+            decoded = jwt_instance.decode(session, secret_key)
+            
+            # Get user from database to ensure role is current
+            user = db1.get_collection('User').find_one({"email": decoded.get("email")})
+            if user:
+                return JSONResponse(
+                    status_code=200, 
+                    content={
+                        "message": "Authenticated",
+                        "role": user.get("role", "user"),
+                        "email": user.get("email")
+                    }
+                )
+        except Exception as e:
+            print(f"Token validation error: {str(e)}")
+    
+    return JSONResponse(status_code=401, content={"message": "Not Authenticated"})
 
 @app.post("/user")
 async def create_user(user: User):

@@ -23,13 +23,15 @@ export interface OTPVerifyData {
 
 export interface AuthResponse {
   message: string;
+  role?: string;
+  email?: string;
 }
 
 export const authService = {
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     return fetchApi('/user/login', {
       method: 'POST',
-      body: JSON.stringify(credentials),
+      body: credentials,
       credentials: 'include', // Important for cookies
     });
   },
@@ -37,7 +39,7 @@ export const authService = {
   async register(data: RegisterData): Promise<AuthResponse> {
     return fetchApi('/user', {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: data,
       credentials: 'include', // Important for cookies
     });
   },
@@ -47,7 +49,7 @@ export const authService = {
     // Just clear any local state if needed
   },
 
-  async checkAuth(): Promise<{ message: string }> {
+  async checkAuth(): Promise<AuthResponse> {
     return fetchApi('/checkAuthentication', {
       method: 'POST',
       credentials: 'include', // Important for cookies

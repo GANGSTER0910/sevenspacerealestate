@@ -32,12 +32,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const response = await authService.checkAuth();
       if (response.message === "Authenticated") {
-        // If authenticated, you might want to fetch user details here
-        // For now, we'll just set a basic user object
-        setUser({ email: '', role: 'user' });
+        setUser({ 
+          email: response.email || '', 
+          role: response.role === 'admin' ? 'admin' : 'user' 
+        });
+      } else {
+        setUser(null);
       }
     } catch (error) {
       console.error('Auth check failed:', error);
+      setUser(null);
     } finally {
       setIsLoading(false);
     }
@@ -48,7 +52,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const response = await authService.login({ email, password });
       if (response.message === "Thank You! Succesfully Completed") {
-        setUser({ email, role: 'user' }); // You might want to get the actual role from the backend
+        await checkAuth();
         toast({
           title: "Login successful",
           description: "Welcome back!",
@@ -73,7 +77,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const response = await authService.register({ email, password, phone });
       if (response.message === "Thank You! Succesfully Completed") {
-        setUser({ email, role: 'user' });
+        await checkAuth();
         toast({
           title: "Registration successful",
           description: "Welcome to Seven Space Real Estate!",

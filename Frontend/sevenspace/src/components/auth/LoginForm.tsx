@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,9 +17,10 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 const LoginForm = () => {
-  const { login } = useAuth();
+  const { login, user } = useAuth();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+  const [loginSuccess, setLoginSuccess] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -33,13 +34,21 @@ const LoginForm = () => {
     setIsLoading(true);
     try {
       const success = await login(values.email, values.password);
-      if (success) {
-        navigate('/dashboard');
-      }
+      setLoginSuccess(success);
     } finally {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (loginSuccess && user) {
+      if (user.role === 'admin') {
+        navigate('/admin/dashboard');
+      } else {
+        navigate('/dashboard');
+      }
+    }
+  }, [loginSuccess, user, navigate]);
 
   return (
     <Card className="w-full max-w-md">
