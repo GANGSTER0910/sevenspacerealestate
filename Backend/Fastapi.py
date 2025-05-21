@@ -23,6 +23,7 @@ from sib_api_v3_sdk import Configuration, ApiClient
 from sib_api_v3_sdk.api.transactional_emails_api import TransactionalEmailsApi
 from sib_api_v3_sdk.models.send_smtp_email import SendSmtpEmail
 from sib_api_v3_sdk.rest import ApiException
+from jwt.exceptions import JWTDecodeError
 app = FastAPI()
 load_dotenv()
 origins = [
@@ -43,7 +44,7 @@ app.add_middleware(
 link = os.getenv("DataBase_Link")
 client1 = MongoClient(link)
 db1 = client1['SSRealEstate']
-algorithm = os.getenv("Alogrithm")
+algorithm = os.getenv("Algorithm")
 access_token_expire_time = int(os.getenv("Access_Token_Expire_Time"))
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated= "auto")
 BREVO_KEY = os.getenv("Brevo_key")
@@ -84,48 +85,60 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     encoded_jwt = jwt_instance.encode(to_encode, secret_key, alg=algorithm)
     print(encoded_jwt)  
     return encoded_jwt
-
-def create_cookie(token:str):
-    response = JSONResponse(content= "Thank You! Succesfully Completed ")
-    response.set_cookie(key="session",value=token,httponly=True,secure=False, samesite='none',max_age=3600)
+def decode_Access_token(token: str):
+    jwt_instance = JWT()
+    secret_key = jwk_from_dict({
+        "k": Secret_key,
+        "kty": "oct"
+    })
+    try:
+        payload = jwt_instance.decode(token, secret_key, algorithms=[algorithm])
+    except JWTDecodeError as e:
+        if "expired" in str(e).lower():
+            raise HTTPException(status_code=401, detail="Token has expired")
+        raise HTTPException(status_code=401, detail="Invalid token")
+    username: str = payload.get("username")
+    role: str = payload.get("role")
+    
+    if username is None or role is None:
+        raise HTTPException(status_code=401, detail="Invalid token data")
+    token_data = {
+        "username": username,
+        "role": role
+    }
+    print(token_data)
+    return token_data
+def create_cookie(token: str):
+    response = JSONResponse(content="Thank You! Succesfully Completed ")
+    # Set cookie with proper attributes
+    response.set_cookie(
+        key="session",
+        value=token,
+        httponly=True,
+        secure=True,  # Set to True for HTTPS
+        samesite='none',  # Allow cross-origin requests
+        max_age=3600,  # 1 hour
+        path="/",  # Cookie available for all paths
+        domain=None  # Let the browser set the domain
+    )
     return response
 
 def getcookie(token:str):
     response = JSONResponse(content="Admin Login Succesfully")
-    response.get
+    response.get_cookie("session")
 
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
 
 
-
+@app.post('/decode')
+async def decode(token: str):
+    return decode_Access_token(token)
 @app.post('/checkAuthentication')
 async def check(request: Request):
     session = request.cookies.get('session')
     if session:
-        try:
-            # Decode the JWT token to get user information
-            jwt_instance = JWT()
-            secret_key = jwk_from_dict({
-                "k": Secret_key,
-                "kty": "oct"
-            })
-            decoded = jwt_instance.decode(session, secret_key)
-            
-            # Get user from database to ensure role is current
-            user = db1.get_collection('User').find_one({"email": decoded.get("email")})
-            if user:
-                return JSONResponse(
-                    status_code=200, 
-                    content={
-                        "message": "Authenticated",
-                        "role": user.get("role", "user"),
-                        "email": user.get("email")
-                    }
-                )
-        except Exception as e:
-            print(f"Token validation error: {str(e)}")
-    
+        return JSONResponse(status_code=200, content={"message": "Authenticated"})
     return JSONResponse(status_code=401, content={"message": "Not Authenticated"})
 
 @app.post("/user")
@@ -161,7 +174,10 @@ async def user_login(user: User_login):
                 user_dict["_id"] = str(user_dict["_id"])
                 expire_timedelta = timedelta(minutes=access_token_expire_time)
                 user_token = create_access_token(user_dict, expire_timedelta)
-                return create_cookie(user_token)
+                response = create_cookie(user_token)
+                # Add role information to the response
+                response.content = {"message": "Login successful", "role": user_dict.get("role", "user")}
+                return response
             else:
                 raise HTTPException(400, detail="Invalid Password")
         else:
