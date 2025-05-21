@@ -1,9 +1,29 @@
-
-import React from "react";
+import { useState } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '@/components/ui/use-toast';
 import Layout from "@/components/layout/Layout";
 import LoginForm from "@/components/auth/LoginForm";
 
 const LoginPage: React.FC = () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const { login } = useAuth();
+  const { toast } = useToast();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await login(email, password);
+      // Note: Navigation is now handled in the AuthContext
+    } catch (error) {
+      toast({
+        title: "Login failed",
+        description: "Please check your credentials and try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <Layout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">

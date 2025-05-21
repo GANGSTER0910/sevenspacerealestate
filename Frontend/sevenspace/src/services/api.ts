@@ -9,6 +9,7 @@ export const fetchApi = async (endpoint: string, options: FetchOptions = {}) => 
 
   const response = await fetch(`${API_URL}${endpoint}`, {
     ...fetchOptions,
+    credentials: 'include', // This is important for handling cookies
     headers: {
       'Content-Type': 'application/json',
       ...options.headers,
@@ -22,4 +23,31 @@ export const fetchApi = async (endpoint: string, options: FetchOptions = {}) => 
   }
 
   return response.json();
-}; 
+};
+
+// Add response interceptor for error handling
+fetchApi.interceptors = {
+  response: {
+    use: (successCallback: (response: Response) => Response, errorCallback: (error: any) => Promise<any>) => {
+      return async (endpoint: string, options: FetchOptions = {}) => {
+        try {
+          const response = await fetchApi(endpoint, options);
+          return successCallback(response);
+        } catch (error) {
+          return errorCallback(error);
+        }
+      };
+    },
+  },
+};
+
+fetchApi.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Handle unauthorized access
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);

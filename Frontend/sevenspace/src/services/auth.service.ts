@@ -21,52 +21,52 @@ export interface OTPVerifyData {
   otp: number;
 }
 
+export interface LoginResponse {
+  message: string;
+  role: string;
+}
+
 export interface AuthResponse {
   message: string;
-  role?: string;
-  email?: string;
 }
 
 export const authService = {
-  async login(credentials: LoginCredentials): Promise<AuthResponse> {
+  async login(email: string, password: string): Promise<LoginResponse> {
     return fetchApi('/user/login', {
       method: 'POST',
-      body: credentials,
-      credentials: 'include', // Important for cookies
+      body: { email, password }
     });
   },
 
-  async register(data: RegisterData): Promise<AuthResponse> {
+  async register(userData: any) {
     return fetchApi('/user', {
       method: 'POST',
-      body: data,
-      credentials: 'include', // Important for cookies
+      body: userData
     });
   },
 
-  async logout(): Promise<void> {
-    // The backend handles session expiration through cookies
-    // Just clear any local state if needed
+  async logout() {
+    // Clear the cookie by setting it to expire
+    document.cookie = 'session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
   },
 
   async checkAuth(): Promise<AuthResponse> {
     return fetchApi('/checkAuthentication', {
-      method: 'POST',
-      credentials: 'include', // Important for cookies
+      method: 'POST'
     });
   },
 
   async sendOTP(data: OTPData): Promise<AuthResponse> {
     return fetchApi('/generate-otp', {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: data
     });
   },
 
   async verifyOTP(data: OTPVerifyData): Promise<AuthResponse> {
     return fetchApi('/verifyotp', {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: data
     });
   },
 

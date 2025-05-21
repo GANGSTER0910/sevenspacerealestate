@@ -20,7 +20,6 @@ const LoginForm = () => {
   const { login, user } = useAuth();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
-  const [loginSuccess, setLoginSuccess] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -33,22 +32,21 @@ const LoginForm = () => {
   const onSubmit = async (values: FormValues) => {
     setIsLoading(true);
     try {
-      const success = await login(values.email, values.password);
-      setLoginSuccess(success);
+      await login(values.email, values.password);
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    if (loginSuccess && user) {
+    if (user) {
       if (user.role === 'admin') {
         navigate('/admin/dashboard');
       } else {
         navigate('/dashboard');
       }
     }
-  }, [loginSuccess, user, navigate]);
+  }, [user, navigate]);
 
   return (
     <Card className="w-full max-w-md">

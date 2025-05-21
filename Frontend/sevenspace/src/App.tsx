@@ -2,8 +2,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "@/contexts/AuthContext";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import React from 'react';
 
 // Main pages
@@ -34,43 +34,66 @@ import NotFound from "./pages/NotFound";
 // Create the query client outside of the component
 const queryClient = new QueryClient();
 
+// Protected Route component
+const ProtectedRoute = ({ children, requiredRole }: { children: React.ReactNode, requiredRole?: string }) => {
+  const { isAuthenticated, userRole } = useAuth();
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" />;
+  }
+
+  if (requiredRole && userRole !== requiredRole) {
+    return <Navigate to="/" />;
+  }
+
+  return <>{children}</>;
+};
+
 const App = () => (
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
+      <Router>
+        <AuthProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
             <Routes>
-              {/* Main Routes */}
+              {/* Public Routes */}
               <Route path="/" element={<HomePage />} />
-              <Route path="/property" element={<PropertyPage />} />
-              <Route path="/property/:id" element={<PropertyDetailPage />} />
-              <Route path="/about" element={<AboutPage />} />
-              <Route path="/services" element={<ServicesPage />} />
-              <Route path="/contact" element={<ContactPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
-              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-              <Route path="/dashboard" element={<UserDashboardPage />} />
-              
-              {/* Admin Routes */}
-              <Route path="/admin" element={<AdminDashboardPage />} />
-              <Route path="/admin/properties" element={<AdminPropertiesPage />} />
-              <Route path="/admin/properties/add" element={<AddPropertyPage />} />
-              <Route path="/admin/users" element={<AdminUsersPage />} />
-              <Route path="/admin/inquiries" element={<AdminInquiriesPage />} />
-              <Route path="/admin/analytics" element={<AdminAnalyticsPage />} />
-              <Route path="/admin/settings" element={<AdminSettingsPage />} />
-              <Route path="/admin/help" element={<AdminHelpPage />} />
-              
+              <Route path="/property" element={<PropertyPage />} />
+              <Route path="/property/:id" element={<PropertyDetailPage />} />
+              <Route path="/contact" element={<ContactPage />} />
+              <Route path="/about" element={<AboutPage />} />
+              <Route path="/services" element={<ServicesPage />} />
+
+              {/* Protected User Routes */}
+              <Route 
+                path="/user/dashboard" 
+                element={
+                  <ProtectedRoute requiredRole="user">
+                    <UserDashboardPage />
+                  </ProtectedRoute>
+                } 
+              />
+
+              {/* Protected Admin Routes */}
+              <Route 
+                path="/admin/dashboard" 
+                element={
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminDashboardPage />
+                  </ProtectedRoute>
+                } 
+              />
+
               {/* 404 route */}
               <Route path="*" element={<NotFound />} />
             </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
-      </AuthProvider>
+          </TooltipProvider>
+        </AuthProvider>
+      </Router>
     </QueryClientProvider>
   </React.StrictMode>
 );
