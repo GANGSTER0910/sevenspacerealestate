@@ -77,8 +77,6 @@ const App = () => (
                   </ProtectedRoute>
                 } 
               />
-
-              {/* Protected Admin Routes */}
               <Route 
                 path="/admin/dashboard" 
                 element={
@@ -87,8 +85,58 @@ const App = () => (
                   </ProtectedRoute>
                 } 
               />
+              <Route
+                path="/admin/analytics"
+                element={
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminAnalyticsPage />
+                  </ProtectedRoute>
+                }
+                />
+              <Route
+                path="/admin/settings"
+                element={
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminSettingsPage />
+                  </ProtectedRoute>
+                }/>
+              <Route
+                path="/admin/help"
+                element={
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminHelpPage />
+                  </ProtectedRoute>
+                }/>
+              <Route
+                path="/admin/inquiries"
+                element={
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminInquiriesPage />
+                  </ProtectedRoute>
+                }/>
+              <Route
+                path="/admin/properties"
+                element={
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminPropertiesPage />
+                  </ProtectedRoute>
+                }/>
+              <Route
+                path="/admin/users"
+                element={
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminUsersPage />
+                  </ProtectedRoute>
+                }/>
+              <Route
+                path="/admin/add-property"
+                element={
+                  <ProtectedRoute requiredRole="admin">
+                    <AddPropertyPage />
+                  </ProtectedRoute>
+                }/>
+              
 
-              {/* 404 route */}
               <Route path="*" element={<NotFound />} />
             </Routes>
           </TooltipProvider>

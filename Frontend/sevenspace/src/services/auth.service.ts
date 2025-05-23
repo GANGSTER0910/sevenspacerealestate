@@ -30,12 +30,38 @@ export interface AuthResponse {
   message: string;
 }
 
+export interface DecodedToken {
+  email: string;
+  role: string;
+}
+
 export const authService = {
   async login(email: string, password: string): Promise<LoginResponse> {
-    return fetchApi('/user/login', {
-      method: 'POST',
-      body: { email, password }
-    });
+    try {
+      // First, attempt to login
+      const loginResponse = await fetchApi('/user/login', {
+        method: 'POST',
+        body: { email, password }
+      });
+
+      // Then check authentication
+      const authResponse = await this.checkAuth();
+      
+      if (authResponse.message === "Authenticated") {
+        // If authenticated, decode the token to get user role
+        const decodedToken = await this.decodeToken();
+        console.log('Decoded token:', decodedToken); // Debug log
+        return {
+          message: loginResponse.message,
+          role: decodedToken.role
+        };
+      }
+      
+      throw new Error('Authentication failed');
+    } catch (error) {
+      console.error('Login error:', error); // Debug log
+      throw error;
+    }
   },
 
   async register(userData: any) {
@@ -72,5 +98,12 @@ export const authService = {
 
   async googleLogin(): Promise<void> {
     window.location.href = `${import.meta.env.VITE_API_URL}/google/login`;
+  },
+
+  async decodeToken(): Promise<DecodedToken> {
+    return fetchApi('/decode', {
+      method: 'POST',
+      credentials: 'include'
+    });
   },
 }; 

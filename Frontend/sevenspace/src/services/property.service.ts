@@ -92,6 +92,25 @@ export const propertyService = {
       method: 'DELETE'
     });
   },
+
+  async addToFavorites(propertyId: string): Promise<{ message: string }> {
+    return fetchApi(`/property/${propertyId}/favorite`, {
+      method: 'POST'
+    });
+  },
+
+  async removeFromFavorites(propertyId: string): Promise<{ message: string }> {
+    return fetchApi(`/property/${propertyId}/favorite`, {
+      method: 'DELETE'
+    });
+  },
+
+  async getFavorites(): Promise<Property[]> {
+    const response = await fetchApi('/property/favorites', {
+      method: 'GET'
+    });
+    return response.favorites;
+  },
 };
 
 // React Query hooks

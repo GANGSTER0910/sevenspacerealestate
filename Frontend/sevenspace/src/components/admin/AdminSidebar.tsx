@@ -48,7 +48,7 @@ const AdminSidebar: React.FC = () => {
       <div className="flex h-full max-h-screen flex-col gap-2">
         <div className="flex h-14 items-center border-b px-4">
           <Link 
-            to="/admin" 
+            to="/" 
             className="flex items-center gap-2 font-semibold"
           >
             <Building className="h-6 w-6 text-realestate-primary" />
@@ -58,9 +58,9 @@ const AdminSidebar: React.FC = () => {
         <div className="flex-1 overflow-auto py-2">
           <nav className="grid items-start px-2 text-sm font-medium">
             <SidebarLink 
-              href="/admin" 
+              href="/admin/dashboard" 
               icon={Home}
-              active={pathname === "/admin"}
+              active={pathname === "/admin/dashboard"}
             >
               Dashboard
             </SidebarLink>

@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -38,6 +37,8 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
     return null;
   }
 
+  const initial = user?.email?.charAt(0) || '';
+
   return (
     <div className="grid min-h-screen w-full lg:grid-cols-[280px_1fr]">
       <AdminSidebar />
@@ -57,13 +58,13 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
             </Button>
             <div className="flex items-center gap-2">
               <Avatar>
-                <AvatarImage src="" alt={user.name} />
+                <AvatarImage src="" alt={user.email} />
                 <AvatarFallback className="bg-realestate-primary text-white">
-                  {user.name.charAt(0).toUpperCase()}
+                  {initial}
                 </AvatarFallback>
               </Avatar>
               <div className="hidden lg:block">
-                <div className="text-sm font-medium">{user.name}</div>
+                <div className="text-sm font-medium">{user.email}</div>
                 <div className="text-xs text-gray-500">{user.email}</div>
               </div>
             </div>

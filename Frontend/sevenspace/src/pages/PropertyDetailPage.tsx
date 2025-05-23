@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import React from 'react';
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -10,6 +10,7 @@ import { MapPin, Bed, Bath, Square, Heart, Share, Calendar, User } from "lucide-
 import { propertyService, Property } from '@/services/property.service';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from '@/contexts/AuthContext';
 
 const PropertyDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -17,6 +18,8 @@ const PropertyDetailPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const { isAuthenticated, checkAuth } = useAuth();
   
   // Add loading states for buttons
   const [isContactLoading, setIsContactLoading] = React.useState(false);
@@ -64,39 +67,124 @@ const PropertyDetailPage: React.FC = () => {
     );
   }
   
-  const handleContactAgent = () => {
-    setIsContactLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      toast({
-        title: "Request Sent",
-        description: "An agent will contact you shortly about this property.",
+  const handleContactAgent = async () => {
+    try {
+      // Check authentication first
+      const authResponse = await checkAuth();
+      if (!isAuthenticated) {
+        toast({
+          title: "Authentication Required",
+          description: "Please login to contact the agent",
+          variant: "destructive",
+        });
+        navigate('/login');
+        return;
+      }
+
+      setIsContactLoading(true);
+      // Redirect to contact page with property details
+      navigate('/contact', { 
+        state: { 
+          propertyId: id,
+          propertyTitle: property?.title,
+          propertyPrice: property?.price
+        }
       });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to process your request. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
       setIsContactLoading(false);
-    }, 800);
+    }
   };
   
-  const handleAddToFavorites = () => {
-    setIsFavoriteLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setIsFavorited(true);
+  const handleAddToFavorites = async () => {
+    try {
+      // Check authentication first
+      const authResponse = await checkAuth();
+      if (!isAuthenticated) {
+        toast({
+          title: "Authentication Required",
+          description: "Please login to save properties",
+          variant: "destructive",
+        });
+        navigate('/login');
+        return;
+      }
+
+      setIsFavoriteLoading(true);
+      
+      if (isFavorited) {
+        await propertyService.removeFromFavorites(id!);
+        setIsFavorited(false);
+        toast({
+          title: "Removed from Favorites",
+          description: "This property has been removed from your favorites.",
+        });
+      } else {
+        await propertyService.addToFavorites(id!);
+        setIsFavorited(true);
+        toast({
+          title: "Added to Favorites",
+          description: "This property has been added to your favorites.",
+        });
+      }
+    } catch (error) {
       toast({
-        title: "Added to Favorites",
-        description: "This property has been added to your favorites.",
+        title: "Error",
+        description: "Failed to update favorites. Please try again.",
+        variant: "destructive",
       });
+    } finally {
       setIsFavoriteLoading(false);
-    }, 800);
+    }
   };
   
-  const handleShare = () => {
-    navigator.clipboard.writeText(window.location.href);
-    toast({
-      title: "Link Copied",
-      description: "Property link copied to clipboard.",
-    });
+  const handleShare = async () => {
+    try {
+      // Get the current URL
+      const shareUrl = window.location.href;
+      
+      // Try to use the modern clipboard API first
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(shareUrl);
+      } else {
+        // Fallback for older browsers or non-secure contexts
+        const textArea = document.createElement('textarea');
+        textArea.value = shareUrl;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        
+        try {
+          document.execCommand('copy');
+        } catch (err) {
+          console.error('Failed to copy text: ', err);
+          throw new Error('Failed to copy link');
+        }
+        
+        document.body.removeChild(textArea);
+      }
+      
+      // Show success toast
+      toast({
+        title: "Link Copied",
+        description: "Property link has been copied to your clipboard."
+      });
+    } catch (error) {
+      console.error('Share error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to copy link. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
   
   const formatPrice = (price: number) => {

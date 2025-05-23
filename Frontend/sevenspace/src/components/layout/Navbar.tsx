@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -107,14 +106,14 @@ const Navbar: React.FC = () => {
                 <>
                   {isAdmin() && (
                     <Link
-                      to="/admin"
+                      to="/admin/dashboard"
                       className="inline-flex items-center px-1 pt-1 border-b-2 border-realestate-primary text-sm font-medium text-realestate-dark"
                     >
                       Admin
                     </Link>
                   )}
                   <Link
-                    to="/dashboard"
+                    to={isAdmin() ? "/admin/dashboard" : "/user/dashboard"}
                     className="inline-flex items-center px-1 pt-1 border-b-2 border-realestate-primary text-sm font-medium text-realestate-dark"
                   >
                     Dashboard
