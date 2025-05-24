@@ -1,5 +1,4 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
+import { Toaster } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
@@ -17,6 +16,7 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import UserDashboardPage from "./pages/UserDashboardPage";
+import FavoritesPage from "./pages/FavoritesPage";
 
 // Admin pages
 import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
@@ -55,90 +55,102 @@ const App = () => (
       <Router>
         <AuthProvider>
           <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <Routes>
-              {/* Public Routes */}
-              <Route path="/" element={<HomePage />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/register" element={<RegisterPage />} />
-              <Route path="/property" element={<PropertyPage />} />
-              <Route path="/property/:id" element={<PropertyDetailPage />} />
-              <Route path="/contact" element={<ContactPage />} />
-              <Route path="/about" element={<AboutPage />} />
-              <Route path="/services" element={<ServicesPage />} />
+            <div className="relative">
+              <Toaster position="top-right" richColors />
+              <Routes>
+                {/* Public Routes */}
+                <Route path="/" element={<HomePage />} />
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/register" element={<RegisterPage />} />
+                <Route path="/property" element={<PropertyPage />} />
+                <Route path="/property/:id" element={<PropertyDetailPage />} />
+                <Route path="/contact" element={<ContactPage />} />
+                <Route path="/about" element={<AboutPage />} />
+                <Route path="/services" element={<ServicesPage />} />
 
-              {/* Protected User Routes */}
-              <Route 
-                path="/user/dashboard" 
-                element={
-                  <ProtectedRoute requiredRole="user">
-                    <UserDashboardPage />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/admin/dashboard" 
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <AdminDashboardPage />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route
-                path="/admin/analytics"
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <AdminAnalyticsPage />
-                  </ProtectedRoute>
-                }
+                {/* Protected User Routes */}
+                <Route 
+                  path="/user/dashboard" 
+                  element={
+                    <ProtectedRoute requiredRole="user">
+                      <UserDashboardPage />
+                    </ProtectedRoute>
+                  } 
                 />
-              <Route
-                path="/admin/settings"
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <AdminSettingsPage />
-                  </ProtectedRoute>
-                }/>
-              <Route
-                path="/admin/help"
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <AdminHelpPage />
-                  </ProtectedRoute>
-                }/>
-              <Route
-                path="/admin/inquiries"
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <AdminInquiriesPage />
-                  </ProtectedRoute>
-                }/>
-              <Route
-                path="/admin/properties"
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <AdminPropertiesPage />
-                  </ProtectedRoute>
-                }/>
-              <Route
-                path="/admin/users"
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <AdminUsersPage />
-                  </ProtectedRoute>
-                }/>
-              <Route
-                path="/admin/add-property"
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <AddPropertyPage />
-                  </ProtectedRoute>
-                }/>
-              
-
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+                <Route 
+                  path="/user/favorites" 
+                  element={
+                    <ProtectedRoute requiredRole="user">
+                      <FavoritesPage />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/admin/dashboard" 
+                  element={
+                    <ProtectedRoute requiredRole="admin">
+                      <AdminDashboardPage />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route
+                  path="/admin/analytics"
+                  element={
+                    <ProtectedRoute requiredRole="admin">
+                      <AdminAnalyticsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/settings"
+                  element={
+                    <ProtectedRoute requiredRole="admin">
+                      <AdminSettingsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/help"
+                  element={
+                    <ProtectedRoute requiredRole="admin">
+                      <AdminHelpPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/inquiries"
+                  element={
+                    <ProtectedRoute requiredRole="admin">
+                      <AdminInquiriesPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/properties"
+                  element={
+                    <ProtectedRoute requiredRole="admin">
+                      <AdminPropertiesPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/users"
+                  element={
+                    <ProtectedRoute requiredRole="admin">
+                      <AdminUsersPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/add-property"
+                  element={
+                    <ProtectedRoute requiredRole="admin">
+                      <AddPropertyPage />
+                    </ProtectedRoute>
+                  }
+                />
+              </Routes>
+            </div>
           </TooltipProvider>
         </AuthProvider>
       </Router>

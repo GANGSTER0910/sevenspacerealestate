@@ -5,19 +5,20 @@ import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getPropertyById } from "@/services/propertyService";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import { MapPin, Bed, Bath, Square, Heart, Share, Calendar, User } from "lucide-react";
 import { propertyService, Property } from '@/services/property.service';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from '@/contexts/AuthContext';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000' || 'https://sevenspacerealestate.onrender.com';
+
 const PropertyDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [property, setProperty] = useState<Property | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { toast } = useToast();
   const navigate = useNavigate();
   const { isAuthenticated, checkAuth } = useAuth();
   
@@ -27,6 +28,33 @@ const PropertyDetailPage: React.FC = () => {
   // Add state to track if the property is favorited
   const [isFavorited, setIsFavorited] = React.useState(false);
   
+  const checkFavoriteStatus = async (propertyId: string) => {
+    try {
+      const response = await fetch(`${API_URL}/property/${propertyId}/favorite`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        // Assuming the backend returns a JSON body like { isFavorited: true/false }
+        const data = await response.json();
+        setIsFavorited(data.isFavorited || false);
+      } else if (response.status === 404) {
+        // Not found means it's not favorited
+        setIsFavorited(false);
+      } else {
+        console.error('Failed to check favorite status:', response.status, response.statusText);
+        setIsFavorited(false); // Assume not favorited on other errors
+      }
+    } catch (error) {
+      console.error('Error checking favorite status:', error);
+      setIsFavorited(false); // Assume not favorited on fetch errors
+    }
+  };
+
   useEffect(() => {
     const fetchProperty = async () => {
       try {
@@ -36,20 +64,18 @@ const PropertyDetailPage: React.FC = () => {
           throw new Error('Property not found');
         }
         setProperty(data);
+        // After fetching property, check if it's favorited by the current user
+        await checkFavoriteStatus(id);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load property');
-        toast({
-          title: "Error",
-          description: "Failed to load property details. Please try again later.",
-          variant: "destructive",
-        });
+        toast.error("Failed to load property details. Please try again later.");
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchProperty();
-  }, [id, toast]);
+  }, [id]);
 
   if (isLoading) {
     return (
@@ -72,11 +98,7 @@ const PropertyDetailPage: React.FC = () => {
       // Check authentication first
       const authResponse = await checkAuth();
       if (!isAuthenticated) {
-        toast({
-          title: "Authentication Required",
-          description: "Please login to contact the agent",
-          variant: "destructive",
-        });
+        toast.error("Please login to contact the agent");
         navigate('/login');
         return;
       }
@@ -91,11 +113,8 @@ const PropertyDetailPage: React.FC = () => {
         }
       });
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to process your request. Please try again.",
-        variant: "destructive",
-      });
+      console.error('Contact agent error:', error);
+      toast.error("Failed to process your request. Please try again.");
     } finally {
       setIsContactLoading(false);
     }
@@ -106,11 +125,7 @@ const PropertyDetailPage: React.FC = () => {
       // Check authentication first
       const authResponse = await checkAuth();
       if (!isAuthenticated) {
-        toast({
-          title: "Authentication Required",
-          description: "Please login to save properties",
-          variant: "destructive",
-        });
+        toast.error("Please login to save properties");
         navigate('/login');
         return;
       }
@@ -118,26 +133,43 @@ const PropertyDetailPage: React.FC = () => {
       setIsFavoriteLoading(true);
       
       if (isFavorited) {
-        await propertyService.removeFromFavorites(id!);
+        // Remove from favorites
+        console.log('Attempting to remove from favorites:', `${API_URL}/property/${id}/favorite`);
+        const response = await fetch(`${API_URL}/property/${id}/favorite`, {
+          method: 'DELETE',
+          credentials: 'include',
+        });
+        
+        if (!response.ok) {
+          console.error('Failed to remove from favorites:', response.status, response.statusText);
+          throw new Error('Failed to remove from favorites');
+        }
+        
         setIsFavorited(false);
-        toast({
-          title: "Removed from Favorites",
-          description: "This property has been removed from your favorites.",
-        });
+        toast.success("Property removed from favorites");
       } else {
-        await propertyService.addToFavorites(id!);
-        setIsFavorited(true);
-        toast({
-          title: "Added to Favorites",
-          description: "This property has been added to your favorites.",
+        // Add to favorites
+        console.log('Attempting to add to favorites:', `${API_URL}/property/${id}/favorite`);
+        const response = await fetch(`${API_URL}/property/${id}/favorite`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+
+          }
         });
+        
+        if (!response.ok) {
+          console.error('Failed to add to favorites:', response.status, response.statusText);
+          throw new Error('Failed to add to favorites');
+        }
+        
+        setIsFavorited(true);
+        toast.success("Property added to favorites");
       }
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update favorites. Please try again.",
-        variant: "destructive",
-      });
+      console.error('Favorite error:', error);
+      toast.error("Failed to update favorites. Please try again.");
     } finally {
       setIsFavoriteLoading(false);
     }
@@ -173,17 +205,10 @@ const PropertyDetailPage: React.FC = () => {
       }
       
       // Show success toast
-      toast({
-        title: "Link Copied",
-        description: "Property link has been copied to your clipboard."
-      });
+      toast.success("Link copied to clipboard");
     } catch (error) {
       console.error('Share error:', error);
-      toast({
-        title: "Error",
-        description: "Failed to copy link. Please try again.",
-        variant: "destructive"
-      });
+      toast.error("Failed to copy link. Please try again.");
     }
   };
   
@@ -317,7 +342,7 @@ const PropertyDetailPage: React.FC = () => {
                     variant="outline"
                     className={`flex-1 ${isFavorited ? 'border-red-300' : ''}`}
                     onClick={handleAddToFavorites}
-                    disabled={isFavoriteLoading || isFavorited}
+                    disabled={isFavoriteLoading}
                   >
                     <Heart 
                       className={`h-4 w-4 mr-2 ${isFavorited ? 'fill-[#ea384c] text-[#ea384c]' : ''}`} 

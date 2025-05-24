@@ -1,21 +1,44 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/components/ui/use-toast";
 import { Heart, Clock, MessageSquare, Home, Settings, User } from "lucide-react";
+import { toast } from "sonner";
+
+interface Property {
+  _id: string;
+  title: string;
+  description: string;
+  location: string;
+  price: number;
+  property_type: string;
+  area_sqft: number;
+  bedrooms: number;
+  bathrooms: number;
+  images: string[];
+  amenities: string[];
+  listed_date: string;
+  status: string;
+}
+
+interface UserProfile {
+  email: string;
+  role: string;
+  name?: string;
+}
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000' || 'https://sevenspacerealestate.onrender.com';
 
 const UserDashboard: React.FC = () => {
   const { user } = useAuth();
-  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("profile");
+  const [favorites, setFavorites] = useState<Property[]>([]);
+  const [isLoadingFavorites, setIsLoadingFavorites] = useState(false);
   
   // Add form state
   const [profileForm, setProfileForm] = useState({
-    name: user?.name || "",
+    name: (user as UserProfile)?.name || "",
     email: user?.email || "",
     phone: "",
     location: "",
@@ -41,14 +64,73 @@ const UserDashboard: React.FC = () => {
   const [isPasswordSaving, setIsPasswordSaving] = useState(false);
   const [isNotificationsSaving, setIsNotificationsSaving] = useState(false);
 
+  useEffect(() => {
+    if (activeTab === "favorites") {
+      fetchFavorites();
+    }
+  }, [activeTab]);
+
+  const fetchFavorites = async () => {
+    try {
+      setIsLoadingFavorites(true);
+      const response = await fetch(`${API_URL}/property/favorites`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',}
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch favorites');
+      }
+
+      const data = await response.json();
+      setFavorites(data.favorites);
+    } catch (error) {
+      console.error('Error fetching favorites:', error);
+      toast.error("Failed to load favorites");
+    } finally {
+      setIsLoadingFavorites(false);
+    }
+  };
+
+  const handleRemoveFavorite = async (propertyId: string) => {
+    try {
+      const response = await fetch(`${API_URL}/property/${propertyId}/favorite`, {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to remove from favorites');
+      }
+
+      setFavorites(favorites.filter(property => property._id !== propertyId));
+      toast.success("Property removed from favorites");
+    } catch (error) {
+      console.error('Error removing favorite:', error);
+      toast.error("Failed to remove from favorites");
+    }
+  };
+
+  const formatPrice = (price: number) => {
+    return price.toLocaleString('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      maximumFractionDigits: 0
+    });
+  };
+
   if (!user) {
     return null;
   }
 
   const handleContactAgent = () => {
-    toast({
-      title: "Request Sent",
-      description: "An agent will contact you shortly.",
+    toast.success("Request Sent", {
+      description: "An agent will contact you shortly."
     });
   };
   
@@ -77,9 +159,8 @@ const UserDashboard: React.FC = () => {
     
     // Simulate API call
     setTimeout(() => {
-      toast({
-        title: "Profile Updated",
-        description: "Your profile has been updated successfully.",
+      toast.success("Profile Updated", {
+        description: "Your profile has been updated successfully."
       });
       setIsProfileSaving(false);
     }, 1000);
@@ -91,10 +172,8 @@ const UserDashboard: React.FC = () => {
     
     // Validation
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      toast({
-        title: "Password Error",
-        description: "New password and confirmation do not match.",
-        variant: "destructive"
+      toast.error("Password Error", {
+        description: "New password and confirmation do not match."
       });
       return;
     }
@@ -103,9 +182,8 @@ const UserDashboard: React.FC = () => {
     
     // Simulate API call
     setTimeout(() => {
-      toast({
-        title: "Password Updated",
-        description: "Your password has been changed successfully.",
+      toast.success("Password Updated", {
+        description: "Your password has been changed successfully."
       });
       setIsPasswordSaving(false);
       setPasswordForm({
@@ -123,9 +201,8 @@ const UserDashboard: React.FC = () => {
     
     // Simulate API call
     setTimeout(() => {
-      toast({
-        title: "Preferences Saved",
-        description: "Your notification preferences have been updated.",
+      toast.success("Preferences Saved", {
+        description: "Your notification preferences have been updated."
       });
       setIsNotificationsSaving(false);
     }, 1000);
@@ -138,7 +215,7 @@ const UserDashboard: React.FC = () => {
           <Card>
             <CardHeader>
               <CardTitle className="text-xl font-semibold">
-                {user.name}
+                {(user as UserProfile)?.name || user.email}
               </CardTitle>
               <CardDescription>{user.email}</CardDescription>
             </CardHeader>
@@ -304,39 +381,62 @@ const UserDashboard: React.FC = () => {
           {activeTab === "favorites" && (
             <>
               <h3 className="text-lg font-semibold mb-4">Your Favorite Properties</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {[1, 2].map((item) => (
-                  <Card key={item}>
-                    <CardContent className="p-0">
-                      <div className="relative">
-                        <img
-                          src="/lovable-uploads/5f8c14d4-6d14-4ff2-8844-b9bfecf97271.png"
-                          alt="Property"
-                          className="h-48 w-full object-cover"
-                        />
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="absolute top-2 right-2 bg-white rounded-full"
-                        >
-                          <Heart className="h-4 w-4 fill-red-500 text-red-500" />
-                        </Button>
-                      </div>
-                      <div className="p-4">
-                        <h4 className="font-semibold">Modern Apartment with City View</h4>
-                        <p className="text-sm text-gray-500">Los Angeles, CA</p>
-                        <p className="font-bold mt-2">$2,500/month</p>
-                        <div className="mt-4 flex space-x-2">
-                          <Link to="/property/1">
-                            <Button variant="outline" size="sm">View Details</Button>
-                          </Link>
-                          <Button variant="secondary" size="sm" onClick={handleContactAgent}>Contact Agent</Button>
+              {isLoadingFavorites ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+                </div>
+              ) : favorites.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-500 mb-4">You haven't saved any properties yet.</p>
+                  <Button 
+                    onClick={() => window.location.href = '/property'}
+                    className="bg-realestate-primary hover:bg-realestate-secondary"
+                  >
+                    Browse Properties
+                  </Button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {favorites.map((property) => (
+                    <Card key={property._id}>
+                      <CardContent className="p-0">
+                        <div className="relative">
+                          <img
+                            src={property.images[0] || "https://via.placeholder.com/400x300"}
+                            alt={property.title}
+                            className="h-48 w-full object-cover"
+                          />
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="absolute top-2 right-2 bg-white rounded-full"
+                            onClick={() => handleRemoveFavorite(property._id)}
+                          >
+                            <Heart className="h-4 w-4 fill-red-500 text-red-500" />
+                          </Button>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                        <div className="p-4">
+                          <h4 className="font-semibold">{property.title}</h4>
+                          <p className="text-sm text-gray-500">{property.location}</p>
+                          <p className="font-bold mt-2">{formatPrice(property.price)}</p>
+                          <div className="mt-4 flex space-x-2">
+                            <Link to={`/property/${property._id}`}>
+                              <Button variant="outline" size="sm">View Details</Button>
+                            </Link>
+                            <Button 
+                              variant="secondary" 
+                              size="sm" 
+                              onClick={() => window.location.href = `/contact?propertyId=${property._id}`}
+                            >
+                              Contact Agent
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </>
           )}
 
