@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from fastapi import *
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse, Response
@@ -72,42 +72,78 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     for key, value in to_encode.items():
         if isinstance(value, ObjectId):
             to_encode[key] = str(value)
+    
     jwt_instance = JWT()
     secret_key = jwk_from_dict({
         "k": Secret_key,
         "kty": "oct"
     })
+    
+    # Get current time in UTC with timezone awareness
+    now = datetime.now(timezone.utc)
+    # Set expiration time (default to 1 hour)
     if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+        expire = now + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=15)
-    to_encode.update({"exp": int(expire.timestamp())})
+        expire = now + timedelta(hours=1)
+    
+    # Add timestamps to the token data
+    to_encode.update({
+        "exp": int(expire.timestamp()),
+        "iat": int(now.timestamp())
+    })
+    
+    # print(f"Token creation time (UTC): {now}")
+    # print(f"Token expiration time (UTC): {expire}")
+    # print(f"Token timestamps - iat: {to_encode['iat']}, exp: {to_encode['exp']}")
     encoded_jwt = jwt_instance.encode(to_encode, secret_key, alg=algorithm)
-    print(encoded_jwt)  
     return encoded_jwt
 def decode_Access_token(token: str):
-    jwt_instance = JWT()
-    secret_key = jwk_from_dict({
-        "k": Secret_key,
-        "kty": "oct"
-    })
     try:
+        jwt_instance = JWT()
+        secret_key = jwk_from_dict({
+            "k": Secret_key,
+            "kty": "oct"
+        })
+        
+        current_time = datetime.now(timezone.utc)
+        # print(f"Current time (UTC): {current_time}")
+        # print(f"Attempting to decode token: {token[:10]}...")
+        
         payload = jwt_instance.decode(token, secret_key, algorithms=[algorithm])
+        # print(f"Decoded payload: {payload}")
+        
+        # Check expiration
+        exp = payload.get('exp')
+        if exp:
+            exp_time = datetime.fromtimestamp(exp, timezone.utc)
+            # print(f"Token expiration time (UTC): {exp_time}")
+            if current_time > exp_time:
+                # print("Token has expired!")
+                raise HTTPException(status_code=401, detail="Token has expired")
+        
+        email: str = payload.get("email")
+        role: str = payload.get("role")
+        
+        if email is None or role is None:
+            # print("Missing email or role in token")
+            raise HTTPException(status_code=401, detail="Invalid token data")
+            
+        token_data = {
+            "email": email,
+            "role": role
+        }
+        # print(f"Returning token data: {token_data}")
+        return token_data
+        
     except JWTDecodeError as e:
+        print(f"JWT decode error: {str(e)}")
         if "expired" in str(e).lower():
             raise HTTPException(status_code=401, detail="Token has expired")
         raise HTTPException(status_code=401, detail="Invalid token")
-    username: str = payload.get("username")
-    role: str = payload.get("role")
-    
-    if username is None or role is None:
-        raise HTTPException(status_code=401, detail="Invalid token data")
-    token_data = {
-        "username": username,
-        "role": role
-    }
-    print(token_data)
-    return token_data
+    except Exception as e:
+        print(f"Unexpected error in decode_Access_token: {str(e)}")
+        raise HTTPException(status_code=401, detail=str(e))
 def create_cookie(token: str):
     response = JSONResponse(content="Thank You! Succesfully Completed ")
     # Set cookie with proper attributes
@@ -132,8 +168,24 @@ def verify_password(plain_password, hashed_password):
 
 
 @app.post('/decode')
-async def decode(token: str):
-    return decode_Access_token(token)
+async def decode(request: Request):
+    try:
+        session = request.cookies.get('session')
+        # print(session)
+        if not session:
+            raise HTTPException(status_code=401, detail="No session token found")
+        
+        # Decode the token and return the data
+        decoded_data = decode_Access_token(session)
+        # print(decoded_data)
+        return JSONResponse(
+            status_code=200,
+            content=decoded_data
+        )
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=str(e))
 @app.post('/checkAuthentication')
 async def check(request: Request):
     session = request.cookies.get('session')
@@ -172,8 +224,11 @@ async def user_login(user: User_login):
             if verify_password(user.password, user_dict.get("password", "")):
                 # Convert ObjectId to string before creating token
                 user_dict["_id"] = str(user_dict["_id"])
-                expire_timedelta = timedelta(minutes=access_token_expire_time)
+                
+                # Create token with 1 hour expiration
+                expire_timedelta = timedelta(hours=1)
                 user_token = create_access_token(user_dict, expire_timedelta)
+                
                 response = create_cookie(user_token)
                 # Add role information to the response
                 response.content = {"message": "Login successful", "role": user_dict.get("role", "user")}
@@ -272,10 +327,10 @@ async def get_all_properties(status: str = "available"):
         query = {"status": status} 
     
     # Debugging: Check the actual query
-        print(f"Querying database with: {query}")
+        # print(f"Querying database with: {query}")
     
         properties = list(db1.get_collection("Property").find({"status": status}))
-        print(properties)
+        # print(properties)
         for property in properties:
             property["_id"] = str(property["_id"])
     # Debugging: Check the retrieved data
@@ -372,6 +427,120 @@ async def get_contact_messages():
         return {"messages": messages}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/property/{property_id}/favorite")
+async def add_to_favorites(property_id: str, request: Request):
+    try:
+        # Check authentication
+        session = request.cookies.get('session')
+        if not session:
+            raise HTTPException(status_code=401, detail="Not authenticated")
+            
+        # Get user email from token
+        user_data = decode_Access_token(session)
+        user_email = user_data.get("email")
+        
+        # Check if property exists
+        property_data = db1.get_collection('Property').find_one({"_id": ObjectId(property_id)})
+        if not property_data:
+            raise HTTPException(status_code=404, detail="Property not found")
+            
+        # Add to user's favorites
+        result = db1.get_collection('User').update_one(
+            {"email": user_email},
+            {"$addToSet": {"favorites": property_id}}
+        )
+        
+        if result.modified_count == 0:
+            raise HTTPException(status_code=400, detail="Property already in favorites")
+            
+        return {"message": "Property added to favorites"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.get("/property/{property_id}/favorite")
+async def check_favorite_status(property_id: str, request: Request):
+    try:
+        # Check authentication
+        session = request.cookies.get('session')
+        if not session:
+            raise HTTPException(status_code=401, detail="Not authenticated")
+            
+        # Get user email from token
+        user_data = decode_Access_token(session)
+        user_email = user_data.get("email")
+        
+        # Get user and check if property_id is in favorites list
+        user = db1.get_collection('User').find_one({"email": user_email})
+        
+        is_favorited = False
+        if user and "favorites" in user and property_id in user["favorites"]:
+            is_favorited = True
+            
+        return {"isFavorited": is_favorited}
+        
+    except Exception as e:
+        # Log the error for debugging
+        print(f"Error checking favorite status: {e}")
+        # Return a generic error response, or a specific one if needed
+        raise HTTPException(status_code=500, detail="Failed to check favorite status")
+
+@app.delete("/property/{property_id}/favorite")
+async def remove_from_favorites(property_id: str, request: Request):
+    try:
+        # Check authentication
+        session = request.cookies.get('session')
+        if not session:
+            raise HTTPException(status_code=401, detail="Not authenticated")
+            
+        # Get user email from token
+        user_data = decode_Access_token(session)
+        user_email = user_data.get("email")
+        
+        # Remove from user's favorites
+        result = db1.get_collection('User').update_one(
+            {"email": user_email},
+            {"$pull": {"favorites": property_id}}
+        )
+        
+        if result.modified_count == 0:
+            raise HTTPException(status_code=400, detail="Property not in favorites")
+            
+        return {"message": "Property removed from favorites"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.get("/property/favorites")
+async def get_favorites(request: Request):
+    try:
+        # Check authentication
+        session = request.cookies.get('session')
+        if not session:
+            raise HTTPException(status_code=401, detail="Not authenticated")
+            
+        # Get user email from token
+        user_data = decode_Access_token(session)
+        user_email = user_data.get("email")
+        
+        # Get user's favorites
+        user = db1.get_collection('User').find_one({"email": user_email})
+        if not user or "favorites" not in user:
+            return {"favorites": []}
+            
+        # Get favorite properties
+        favorite_properties = []
+        for property_id in user["favorites"]:
+            property_data = db1.get_collection('Property').find_one({"_id": ObjectId(property_id)})
+            if property_data:
+                property_data["_id"] = str(property_data["_id"])
+                favorite_properties.append(property_data)
+                
+        return {"favorites": favorite_properties}
+    except Exception as e:
+        # Log the error for debugging
+        print(f"Error getting favorites: {e}")
+        # Return a generic error response, or a specific one if needed
+        raise HTTPException(status_code=400, detail=str(e))
 
 if __name__ == "__main__":
     import uvicorn
