@@ -440,15 +440,19 @@ async def add_to_favorites(property_id: str, request: Request):
         user_data = decode_Access_token(session)
         user_email = user_data.get("email")
         
-        # Check if property exists
-        property_data = db1.get_collection('Property').find_one({"_id": ObjectId(property_id)})
-        if not property_data:
-            raise HTTPException(status_code=404, detail="Property not found")
+        # Check if property exists and convert to ObjectId
+        try:
+            object_id = ObjectId(property_id)
+            property_data = db1.get_collection('Property').find_one({"_id": object_id})
+            if not property_data:
+                raise HTTPException(status_code=404, detail="Property not found")
+        except Exception as e:
+            raise HTTPException(status_code=400, detail="Invalid property ID format")
             
         # Add to user's favorites
         result = db1.get_collection('User').update_one(
             {"email": user_email},
-            {"$addToSet": {"favorites": property_id}}
+            {"$addToSet": {"favorites": str(object_id)}}  # Store as string
         )
         
         if result.modified_count == 0:
@@ -515,6 +519,7 @@ async def get_favorites(request: Request):
     try:
         # Check authentication
         session = request.cookies.get('session')
+        print(f"Session cookie: {session}")
         if not session:
             raise HTTPException(status_code=401, detail="Not authenticated")
             
@@ -524,22 +529,60 @@ async def get_favorites(request: Request):
         
         # Get user's favorites
         user = db1.get_collection('User').find_one({"email": user_email})
-        if not user or "favorites" not in user:
+        if not user:
+            return {"favorites": []}
+            
+        # Debug: Print user data
+        print(f"User data: {user}")
+        
+        # Initialize favorites array if it doesn't exist
+        if "favorites" not in user:
+            db1.get_collection('User').update_one(
+                {"email": user_email},
+                {"$set": {"favorites": []}}
+            )
             return {"favorites": []}
             
         # Get favorite properties
         favorite_properties = []
         for property_id in user["favorites"]:
-            property_data = db1.get_collection('Property').find_one({"_id": ObjectId(property_id)})
-            if property_data:
-                property_data["_id"] = str(property_data["_id"])
-                favorite_properties.append(property_data)
+            try:
+                # Debug: Print property ID
+                print(f"Processing property ID: {property_id}, type: {type(property_id)}")
+                
+                # Skip if property_id is not a string
+                if not isinstance(property_id, str):
+                    print(f"Skipping invalid property ID type: {type(property_id)}")
+                    continue
+                    
+                # Skip if property_id is empty
+                if not property_id.strip():
+                    print("Skipping empty property ID")
+                    continue
+                
+                # Convert string ID to ObjectId
+                object_id = ObjectId(property_id)
+                property_data = db1.get_collection('Property').find_one({"_id": object_id})
+                if property_data:
+                    property_data["_id"] = str(property_data["_id"])
+                    favorite_properties.append(property_data)
+                else:
+                    print(f"Property not found for ID: {property_id}")
+            except Exception as e:
+                print(f"Error processing property ID {property_id}: {str(e)}")
+                # Remove invalid property ID from favorites
+                try:
+                    db1.get_collection('User').update_one(
+                        {"email": user_email},
+                        {"$pull": {"favorites": property_id}}
+                    )
+                except Exception as update_error:
+                    print(f"Error removing invalid property ID: {str(update_error)}")
+                continue
                 
         return {"favorites": favorite_properties}
     except Exception as e:
-        # Log the error for debugging
         print(f"Error getting favorites: {e}")
-        # Return a generic error response, or a specific one if needed
         raise HTTPException(status_code=400, detail=str(e))
 
 if __name__ == "__main__":

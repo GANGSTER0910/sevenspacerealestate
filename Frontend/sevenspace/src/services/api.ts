@@ -9,7 +9,7 @@ export const fetchApi = async (endpoint: string, options: FetchOptions = {}) => 
 
   const response = await fetch(`${API_URL}${endpoint}`, {
     ...fetchOptions,
-    credentials: 'include', // This is important for handling cookies
+    credentials: 'include', 
     headers: {
       'Content-Type': 'application/json',
       ...options.headers,
