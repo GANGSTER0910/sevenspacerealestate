@@ -77,7 +77,9 @@ const UserDashboard: React.FC = () => {
         method: 'GET',
         credentials: 'include',
         headers: {
-          'Content-Type': 'application/json',}
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
       });
 
       if (!response.ok) {

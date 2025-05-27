@@ -476,7 +476,7 @@ async def check_favorite_status(property_id: str, request: Request):
         
         # Get user and check if property_id is in favorites list
         user = db1.get_collection('User').find_one({"email": user_email})
-        
+
         is_favorited = False
         if user and "favorites" in user and property_id in user["favorites"]:
             is_favorited = True
@@ -530,7 +530,7 @@ async def get_favorites(request: Request):
         # Get user's favorites
         user = db1.get_collection('User').find_one({"email": user_email})
         if not user:
-            return {"favorites": []}
+            return JSONResponse(status_code=200, content={"favorites": []})
             
         # Debug: Print user data
         print(f"User data: {user}")
@@ -541,7 +541,7 @@ async def get_favorites(request: Request):
                 {"email": user_email},
                 {"$set": {"favorites": []}}
             )
-            return {"favorites": []}
+            return JSONResponse(status_code=200, content={"favorites": []})
             
         # Get favorite properties
         favorite_properties = []
@@ -580,10 +580,10 @@ async def get_favorites(request: Request):
                     print(f"Error removing invalid property ID: {str(update_error)}")
                 continue
                 
-        return {"favorites": favorite_properties}
+        return JSONResponse(status_code=200, content={"favorites": favorite_properties})
     except Exception as e:
         print(f"Error getting favorites: {e}")
-        raise HTTPException(status_code=400, detail=str(e))
+        return JSONResponse(status_code=200, content={"favorites": []})
 
 if __name__ == "__main__":
     import uvicorn
