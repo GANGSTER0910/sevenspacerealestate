@@ -1,0 +1,77 @@
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
+import httpx
+import os
+from dotenv import load_dotenv
+from common.middleware import setup_middleware
+from common.service_discovery import setup_service_discovery, service_registry
+
+# Load environment variables
+load_dotenv()
+
+# Initialize FastAPI app
+app = FastAPI(
+    title="API Gateway",
+    description="Gateway for all microservices",
+    version="1.0.0"
+)
+
+# Setup middleware
+setup_middleware(app)
+
+# Setup service discovery
+setup_service_discovery(app)
+
+# CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Service routing
+@app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
+async def route_request(path: str, request: Request):
+    """
+    Route requests to appropriate service
+    """
+    # Get service name from path
+    service_name = path.split("/")[0]
+    
+    try:
+        # Get service URL
+        service_url = service_registry.get_service_url(service_name)
+        
+        # Forward request to service
+        async with httpx.AsyncClient() as client:
+            # Get request body
+            body = await request.body()
+            
+            # Forward request
+            response = await client.request(
+                method=request.method,
+                url=f"{service_url}/{path}",
+                headers=dict(request.headers),
+                params=dict(request.query_params),
+                content=body
+            )
+            
+            return response.json()
+            
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/health")
+async def health_check():
+    """
+    Health check endpoint
+    """
+    return {"status": "healthy", "service": "api-gateway"}
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000) 

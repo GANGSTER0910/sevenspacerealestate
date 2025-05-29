@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  image-service:
+    build: .
+    ports:
+      - "8003:8003"
+    environment:
+      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
+      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
+      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
+    volumes:
+      - .:/app
+    networks:
+      - seven-space-network
+
+networks:
+  seven-space-network:
+    driver: bridge 
