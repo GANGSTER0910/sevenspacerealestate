@@ -12,17 +12,9 @@ from typing import Optional
 from bson import ObjectId
 from schema import *
 import gridfs
-import random
-from fastapi.templating import Jinja2Templates
 from starlette.requests import Request
-from starlette.responses import RedirectResponse
 from starlette.middleware.sessions import SessionMiddleware
 from authlib.integrations.starlette_client import OAuth, OAuthError
-from fastapi.staticfiles import StaticFiles
-from sib_api_v3_sdk import Configuration, ApiClient
-from sib_api_v3_sdk.api.transactional_emails_api import TransactionalEmailsApi
-from sib_api_v3_sdk.models.send_smtp_email import SendSmtpEmail
-from sib_api_v3_sdk.rest import ApiException
 from jwt.exceptions import JWTDecodeError
 app = FastAPI()
 load_dotenv()
@@ -44,155 +36,8 @@ app.add_middleware(
 link = os.getenv("DataBase_Link")
 client1 = MongoClient(link)
 db1 = client1['SSRealEstate']
-algorithm = os.getenv("Algorithm")
-access_token_expire_time = int(os.getenv("Access_Token_Expire_Time"))
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated= "auto")
-BREVO_KEY = os.getenv("Brevo_key")
 app.add_middleware(SessionMiddleware,
     secret_key = Secret_key,)
-CLIENT_ID = os.getenv('CLIENT_ID')
-CLIENT_SECRET = os.getenv('CLIENT_SECRET')
-oauth = OAuth()
-oauth.register(
-    name='google',
-    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
-    client_id=CLIENT_ID,
-    client_secret=CLIENT_SECRET,
-    client_kwargs={
-        'scope': 'email openid profile',
-        'redirect_url': 'https://sevenspacerealestate.onrender.com/auth'
-    }
-)
-fs = gridfs.GridFS(db1)
-def get_password_hash(password):
-    return pwd_context.hash(password)
-
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
-    to_encode = data.copy()
-    for key, value in to_encode.items():
-        if isinstance(value, ObjectId):
-            to_encode[key] = str(value)
-    
-    jwt_instance = JWT()
-    secret_key = jwk_from_dict({
-        "k": Secret_key,
-        "kty": "oct"
-    })
-    
-    # Get current time in UTC with timezone awareness
-    now = datetime.now(timezone.utc)
-    # Set expiration time (default to 1 hour)
-    if expires_delta:
-        expire = now + expires_delta
-    else:
-        expire = now + timedelta(hours=1)
-    
-    # Add timestamps to the token data
-    to_encode.update({
-        "exp": int(expire.timestamp()),
-        "iat": int(now.timestamp())
-    })
-    
-    # print(f"Token creation time (UTC): {now}")
-    # print(f"Token expiration time (UTC): {expire}")
-    # print(f"Token timestamps - iat: {to_encode['iat']}, exp: {to_encode['exp']}")
-    encoded_jwt = jwt_instance.encode(to_encode, secret_key, alg=algorithm)
-    return encoded_jwt
-def decode_Access_token(token: str):
-    try:
-        jwt_instance = JWT()
-        secret_key = jwk_from_dict({
-            "k": Secret_key,
-            "kty": "oct"
-        })
-        
-        current_time = datetime.now(timezone.utc)
-        # print(f"Current time (UTC): {current_time}")
-        # print(f"Attempting to decode token: {token[:10]}...")
-        
-        payload = jwt_instance.decode(token, secret_key, algorithms=[algorithm])
-        # print(f"Decoded payload: {payload}")
-        
-        # Check expiration
-        exp = payload.get('exp')
-        if exp:
-            exp_time = datetime.fromtimestamp(exp, timezone.utc)
-            # print(f"Token expiration time (UTC): {exp_time}")
-            if current_time > exp_time:
-                # print("Token has expired!")
-                raise HTTPException(status_code=401, detail="Token has expired")
-        
-        email: str = payload.get("email")
-        role: str = payload.get("role")
-        
-        if email is None or role is None:
-            # print("Missing email or role in token")
-            raise HTTPException(status_code=401, detail="Invalid token data")
-            
-        token_data = {
-            "email": email,
-            "role": role
-        }
-        # print(f"Returning token data: {token_data}")
-        return token_data
-        
-    except JWTDecodeError as e:
-        print(f"JWT decode error: {str(e)}")
-        if "expired" in str(e).lower():
-            raise HTTPException(status_code=401, detail="Token has expired")
-        raise HTTPException(status_code=401, detail="Invalid token")
-    except Exception as e:
-        print(f"Unexpected error in decode_Access_token: {str(e)}")
-        raise HTTPException(status_code=401, detail=str(e))
-def create_cookie(token: str):
-    response = JSONResponse(content="Thank You! Succesfully Completed ")
-    # Set cookie with proper attributes
-    response.set_cookie(
-        key="session",
-        value=token,
-        httponly=True,
-        secure=True,  # Set to True for HTTPS
-        samesite='none',  # Allow cross-origin requests
-        max_age=3600,  # 1 hour
-        path="/",  # Cookie available for all paths
-        domain=None  # Let the browser set the domain
-    )
-    return response
-
-def getcookie(token:str):
-    response = JSONResponse(content="Admin Login Succesfully")
-    response.get_cookie("session")
-
-def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
-
-
-@app.post('/decode')
-async def decode(request: Request):
-    try:
-        session = request.cookies.get('session')
-        # print(session)
-        if not session:
-            raise HTTPException(status_code=401, detail="No session token found")
-        
-        # Decode the token and return the data
-        decoded_data = decode_Access_token(session)
-        # print(decoded_data)
-        return JSONResponse(
-            status_code=200,
-            content=decoded_data
-        )
-    except HTTPException as he:
-        raise he
-    except Exception as e:
-        raise HTTPException(status_code=401, detail=str(e))
-@app.post('/checkAuthentication')
-async def check(request: Request):
-    session = request.cookies.get('session')
-    if session:
-        return JSONResponse(status_code=200, content={"message": "Authenticated"})
-    return JSONResponse(status_code=401, content={"message": "Not Authenticated"})
-
 
 @app.post("/property")
 async def add_property(property: Property, files: List[UploadFile] = File(...)):

@@ -1,29 +1,16 @@
-from datetime import datetime, timedelta, timezone
 from fastapi import *
-from fastapi.encoders import jsonable_encoder
-from fastapi.responses import JSONResponse, Response
 from pymongo import *
 import os
 from dotenv import load_dotenv
 from passlib.context import CryptContext
 from fastapi.middleware.cors import CORSMiddleware
-from jwt import JWT, jwk_from_dict
-from typing import Optional
-from bson import ObjectId
 from schema import *
-import gridfs
-import random
-from fastapi.templating import Jinja2Templates
-from starlette.requests import Request
-from starlette.responses import RedirectResponse
 from starlette.middleware.sessions import SessionMiddleware
 from authlib.integrations.starlette_client import OAuth, OAuthError
-from fastapi.staticfiles import StaticFiles
 from sib_api_v3_sdk import Configuration, ApiClient
 from sib_api_v3_sdk.api.transactional_emails_api import TransactionalEmailsApi
 from sib_api_v3_sdk.models.send_smtp_email import SendSmtpEmail
 from sib_api_v3_sdk.rest import ApiException
-from jwt.exceptions import JWTDecodeError
 app = FastAPI()
 load_dotenv()
 origins = [
@@ -44,27 +31,9 @@ app.add_middleware(
 link = os.getenv("DataBase_Link")
 client1 = MongoClient(link)
 db1 = client1['SSRealEstate']
-algorithm = os.getenv("Algorithm")
-access_token_expire_time = int(os.getenv("Access_Token_Expire_Time"))
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated= "auto")
 BREVO_KEY = os.getenv("Brevo_key")
 app.add_middleware(SessionMiddleware,
     secret_key = Secret_key,)
-CLIENT_ID = os.getenv('CLIENT_ID')
-CLIENT_SECRET = os.getenv('CLIENT_SECRET')
-oauth = OAuth()
-oauth.register(
-    name='google',
-    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
-    client_id=CLIENT_ID,
-    client_secret=CLIENT_SECRET,
-    client_kwargs={
-        'scope': 'email openid profile',
-        'redirect_url': 'https://sevenspacerealestate.onrender.com/auth'
-    }
-)
-fs = gridfs.GridFS(db1)
-
 @app.post("/contact")
 async def submit_contact_form(contact: Contact):
     try:

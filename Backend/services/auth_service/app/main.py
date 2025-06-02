@@ -1,7 +1,6 @@
 from datetime import datetime, timedelta, timezone
 from fastapi import *
-from fastapi.encoders import jsonable_encoder
-from fastapi.responses import JSONResponse, Response
+from fastapi.responses import JSONResponse
 from pymongo import *
 import os
 from dotenv import load_dotenv
@@ -12,17 +11,9 @@ from typing import Optional
 from bson import ObjectId
 from schema import *
 import gridfs
-import random
-from fastapi.templating import Jinja2Templates
 from starlette.requests import Request
-from starlette.responses import RedirectResponse
 from starlette.middleware.sessions import SessionMiddleware
 from authlib.integrations.starlette_client import OAuth, OAuthError
-from fastapi.staticfiles import StaticFiles
-from sib_api_v3_sdk import Configuration, ApiClient
-from sib_api_v3_sdk.api.transactional_emails_api import TransactionalEmailsApi
-from sib_api_v3_sdk.models.send_smtp_email import SendSmtpEmail
-from sib_api_v3_sdk.rest import ApiException
 from jwt.exceptions import JWTDecodeError
 app = FastAPI()
 load_dotenv()
@@ -79,23 +70,16 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
         "kty": "oct"
     })
     
-    # Get current time in UTC with timezone awareness
     now = datetime.now(timezone.utc)
-    # Set expiration time (default to 1 hour)
     if expires_delta:
         expire = now + expires_delta
     else:
         expire = now + timedelta(hours=1)
     
-    # Add timestamps to the token data
     to_encode.update({
         "exp": int(expire.timestamp()),
         "iat": int(now.timestamp())
     })
-    
-    # print(f"Token creation time (UTC): {now}")
-    # print(f"Token expiration time (UTC): {expire}")
-    # print(f"Token timestamps - iat: {to_encode['iat']}, exp: {to_encode['exp']}")
     encoded_jwt = jwt_instance.encode(to_encode, secret_key, alg=algorithm)
     return encoded_jwt
 def decode_Access_token(token: str):
@@ -106,34 +90,25 @@ def decode_Access_token(token: str):
             "kty": "oct"
         })
         
-        current_time = datetime.now(timezone.utc)
-        # print(f"Current time (UTC): {current_time}")
-        # print(f"Attempting to decode token: {token[:10]}...")
-        
+        current_time = datetime.now(timezone.utc)    
         payload = jwt_instance.decode(token, secret_key, algorithms=[algorithm])
-        # print(f"Decoded payload: {payload}")
         
-        # Check expiration
         exp = payload.get('exp')
         if exp:
             exp_time = datetime.fromtimestamp(exp, timezone.utc)
-            # print(f"Token expiration time (UTC): {exp_time}")
             if current_time > exp_time:
-                # print("Token has expired!")
                 raise HTTPException(status_code=401, detail="Token has expired")
         
         email: str = payload.get("email")
         role: str = payload.get("role")
         
         if email is None or role is None:
-            # print("Missing email or role in token")
             raise HTTPException(status_code=401, detail="Invalid token data")
             
         token_data = {
             "email": email,
             "role": role
         }
-        # print(f"Returning token data: {token_data}")
         return token_data
         
     except JWTDecodeError as e:
@@ -144,18 +119,18 @@ def decode_Access_token(token: str):
     except Exception as e:
         print(f"Unexpected error in decode_Access_token: {str(e)}")
         raise HTTPException(status_code=401, detail=str(e))
+
 def create_cookie(token: str):
     response = JSONResponse(content="Thank You! Succesfully Completed ")
-    # Set cookie with proper attributes
     response.set_cookie(
         key="session",
         value=token,
         httponly=True,
-        secure=True,  # Set to True for HTTPS
-        samesite='none',  # Allow cross-origin requests
-        max_age=3600,  # 1 hour
-        path="/",  # Cookie available for all paths
-        domain=None  # Let the browser set the domain
+        secure=True,  
+        samesite='none',
+        max_age=3600,  
+        path="/",  
+        domain=None
     )
     return response
 
@@ -166,18 +141,14 @@ def getcookie(token:str):
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
 
-
 @app.post('/decode')
 async def decode(request: Request):
     try:
         session = request.cookies.get('session')
-        # print(session)
         if not session:
             raise HTTPException(status_code=401, detail="No session token found")
         
-        # Decode the token and return the data
         decoded_data = decode_Access_token(session)
-        # print(decoded_data)
         return JSONResponse(
             status_code=200,
             content=decoded_data
@@ -186,6 +157,7 @@ async def decode(request: Request):
         raise he
     except Exception as e:
         raise HTTPException(status_code=401, detail=str(e))
+
 @app.post('/checkAuthentication')
 async def check(request: Request):
     session = request.cookies.get('session')
@@ -196,18 +168,13 @@ async def check(request: Request):
 @app.post("/user")
 async def create_user(user: User):
     try:
-        # Check if user already exists
         existing_user = db1.get_collection('User').find_one({"email": user.email})
         if existing_user:
             raise HTTPException(400, detail="Email already registered")
-
         user_dict = user.model_dump()
         user_dict["password"] = get_password_hash(user_dict["password"])
         result = db1.get_collection('User').insert_one(user_dict)
-        
-        # Convert ObjectId to string
-        user_dict["_id"] = str(result.inserted_id)
-        
+        user_dict["_id"] = str(result.inserted_id)        
         expire_timedelta = timedelta(minutes=access_token_expire_time)
         user_token = create_access_token(user_dict, expire_timedelta)
         return create_cookie(user_token)
@@ -222,15 +189,10 @@ async def user_login(user: User_login):
         user_dict = db1.get_collection('User').find_one({"email": user.email})
         if user_dict:
             if verify_password(user.password, user_dict.get("password", "")):
-                # Convert ObjectId to string before creating token
                 user_dict["_id"] = str(user_dict["_id"])
-                
-                # Create token with 1 hour expiration
                 expire_timedelta = timedelta(hours=1)
                 user_token = create_access_token(user_dict, expire_timedelta)
-                
                 response = create_cookie(user_token)
-                # Add role information to the response
                 response.content = {"message": "Login successful", "role": user_dict.get("role", "user")}
                 return response
             else:
