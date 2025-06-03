@@ -3,8 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 import httpx
 import os
 from dotenv import load_dotenv
-from common.middleware import setup_middleware
-from common.service_discovery import setup_service_discovery, service_registry
+from services.common.middleware import setup_middleware
+from services.common.service_discovery import setup_service_discovery, service_registry
 
 # Load environment variables
 load_dotenv()
@@ -39,7 +39,7 @@ async def route_request(path: str, request: Request):
     """
     # Get service name from path
     service_name = path.split("/")[0]
-    
+    print(service_name)
     try:
         # Get service URL
         service_url = service_registry.get_service_url(service_name)
