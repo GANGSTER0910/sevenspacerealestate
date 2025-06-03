@@ -2,14 +2,20 @@ from fastapi import HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jwt import JWT, jwk_from_dict
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from dotenv import load_dotenv
+from typing import Dict, Set
 
 load_dotenv()
 
 security = HTTPBearer()
 Secret_key = os.getenv("SECRET_KEY")
 algorithm = os.getenv("Algorithm")
+REFRESH_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+# In-memory token blacklist (consider using Redis in production)
+token_blacklist: Set[str] = set()
 
 def decode_access_token(token: str):
     try:
@@ -43,11 +49,50 @@ def decode_access_token(token: str):
     except Exception as e:
         raise HTTPException(status_code=401, detail=str(e))
 
+def create_access_token(data: dict):
+    """Create a new access token"""
+    jwt_instance = JWT()
+    secret_key = jwk_from_dict({
+        "k": Secret_key,
+        "kty": "oct"
+    })
+    
+    to_encode = data.copy()
+    expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode.update({"exp": expire})
+    
+    return jwt_instance.encode(to_encode, secret_key, algorithm=algorithm)
+
+def create_refresh_token(data: dict):
+    """Create a new refresh token"""
+    jwt_instance = JWT()
+    secret_key = jwk_from_dict({
+        "k": Secret_key,
+        "kty": "oct"
+    })
+    
+    to_encode = data.copy()
+    expire = datetime.now(timezone.utc) + timedelta(minutes=REFRESH_TOKEN_EXPIRE_MINUTES)
+    to_encode.update({"exp": expire})
+    
+    return jwt_instance.encode(to_encode, secret_key, algorithm=algorithm)
+
+def blacklist_token(token: str):
+    """Add a token to the blacklist"""
+    token_blacklist.add(token)
+
+def is_token_blacklisted(token: str) -> bool:
+    """Check if a token is blacklisted"""
+    return token in token_blacklist
+
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
     """
     Dependency for getting the current user from the token
     """
-    return decode_access_token(credentials.credentials)
+    token = credentials.credentials
+    if is_token_blacklisted(token):
+        raise HTTPException(status_code=401, detail="Token has been revoked")
+    return decode_access_token(token)
 
 def require_role(required_role: str):
     """

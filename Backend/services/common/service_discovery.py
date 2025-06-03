@@ -5,6 +5,7 @@ import os
 from typing import Dict, List
 import logging
 from datetime import datetime, timedelta
+import asyncio
 
 logger = logging.getLogger(__name__)
 
@@ -13,6 +14,7 @@ class ServiceRegistry:
         self.services: Dict[str, Dict] = {}
         self.health_check_interval = 30  # seconds
         self.last_health_check = {}
+        self.cleanup_interval = 300  # 5 minutes
     
     def register_service(self, service_name: str, service_url: str):
         """Register a new service"""
@@ -67,11 +69,28 @@ class ServiceRegistry:
             self.update_service_status(service_name, "unhealthy")
             return False
 
+    async def start_periodic_health_checks(self):
+        """Start periodic health checks for all services"""
+        while True:
+            for service_name in list(self.services.keys()):
+                await self.check_service_health(service_name)
+                # Clean up stale services
+                if service_name in self.services:
+                    last_seen = self.services[service_name]["last_seen"]
+                    if datetime.now() - last_seen > timedelta(seconds=self.cleanup_interval):
+                        self.unregister_service(service_name)
+            await asyncio.sleep(self.health_check_interval)
+
 # Create service registry instance
 service_registry = ServiceRegistry()
 
 # Service discovery endpoints
 def setup_service_discovery(app: FastAPI):
+    # Start periodic health checks
+    @app.on_event("startup")
+    async def start_health_checks():
+        asyncio.create_task(service_registry.start_periodic_health_checks())
+    
     @app.post("/register")
     async def register_service(service_name: str, service_url: str):
         service_registry.register_service(service_name, service_url)

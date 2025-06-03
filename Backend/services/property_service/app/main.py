@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 from passlib.context import CryptContext
 from fastapi.middleware.cors import CORSMiddleware
 from jwt import JWT, jwk_from_dict
-from typing import Optional
+from typing import Optional, List
 from bson import ObjectId
 from schema import *
 import gridfs
@@ -16,52 +16,126 @@ from starlette.requests import Request
 from starlette.middleware.sessions import SessionMiddleware
 from authlib.integrations.starlette_client import OAuth, OAuthError
 from jwt.exceptions import JWTDecodeError
-app = FastAPI()
+import httpx
+
+app = FastAPI(
+    title="Property Service",
+    description="Microservice for handling property listings and management",
+    version="1.0.0"
+)
 load_dotenv()
+
+# Service registration
+SERVICE_NAME = "property-service"
+SERVICE_URL = f"http://localhost:{os.getenv('PORT', '8004')}"
+
 origins = [
     "http://localhost:5173",
     "http://localhost:8000",
     "https://sevenspacerealestate.vercel.app",
     "http://localhost:3000",
-    ]  
+]  
 
 Secret_key = os.getenv("SECRET_KEY")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins= origins,
-    allow_credentials= True,
+    allow_origins=origins,
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 link = os.getenv("DataBase_Link")
 client1 = MongoClient(link)
 db1 = client1['SSRealEstate']
-app.add_middleware(SessionMiddleware,
-    secret_key = Secret_key,)
+fs = gridfs.GridFS(db1)
+
+app.add_middleware(SessionMiddleware, secret_key=Secret_key)
+
+@app.on_event("startup")
+async def startup_event():
+    """Register service on startup"""
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                "http://localhost:8000/register",
+                params={"service_name": SERVICE_NAME, "service_url": SERVICE_URL}
+            )
+            if response.status_code == 200:
+                print(f"Service {SERVICE_NAME} registered successfully")
+    except Exception as e:
+        print(f"Failed to register service: {str(e)}")
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Unregister service on shutdown"""
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                "http://localhost:8000/unregister",
+                params={"service_name": SERVICE_NAME}
+            )
+            if response.status_code == 200:
+                print(f"Service {SERVICE_NAME} unregistered successfully")
+    except Exception as e:
+        print(f"Failed to unregister service: {str(e)}")
+
+def validate_property_data(property_data: dict) -> None:
+    """Validate property data"""
+    if not property_data.get("title"):
+        raise HTTPException(status_code=400, detail="Title is required")
+    if not property_data.get("description"):
+        raise HTTPException(status_code=400, detail="Description is required")
+    if not property_data.get("property_type"):
+        raise HTTPException(status_code=400, detail="Property type is required")
+    if not property_data.get("location"):
+        raise HTTPException(status_code=400, detail="Location is required")
+    if not property_data.get("price") or property_data["price"] <= 0:
+        raise HTTPException(status_code=400, detail="Valid price is required")
 
 @app.post("/property")
 async def add_property(property: Property, files: List[UploadFile] = File(...)):
-    # property_data = property.dict() 
-    image_ids = []
-    for file in files:
-        image_id = fs.put(file.file, filename=file.filename)
-        image_ids.append(str(image_id))
-    normalized_title = property.title.strip().lower()
-    if not property.listed_date:
-        property.listed_date = datetime.now().strftime("%Y-%m-%d")
-    existing_property = db1.get_collection('Property').find_one(
-        {"title": normalized_title, "location": property.location.strip()},
-        {"_id": 0}
-    )
-    if existing_property:
-        raise HTTPException(status_code=400, detail="Property already exists.")
-    property_data = property.dict()
-    property_data["images"] = image_ids
-    property_data["title"] = normalized_title
-    property_data["location"] = property.location.strip()
-    result = db1.get_collection('Property').insert_one(property_data)
-    property_data["_id"] = str(result.inserted_id)
-    return {"message": "Property added successfully", "property": jsonable_encoder(property_data)}
+    try:
+        # Validate property data
+        property_data = property.dict()
+        validate_property_data(property_data)
+
+        # Process images
+        image_ids = []
+        for file in files:
+            if not file.content_type.startswith('image/'):
+                raise HTTPException(status_code=400, detail=f"File {file.filename} is not an image")
+            image_id = fs.put(file.file, filename=file.filename)
+            image_ids.append(str(image_id))
+
+        # Normalize title and location
+        normalized_title = property.title.strip().lower()
+        normalized_location = property.location.strip()
+
+        # Check for existing property
+        existing_property = db1.get_collection('Property').find_one(
+            {"title": normalized_title, "location": normalized_location},
+            {"_id": 0}
+        )
+        if existing_property:
+            raise HTTPException(status_code=400, detail="Property already exists")
+
+        # Prepare property data
+        property_data["images"] = image_ids
+        property_data["title"] = normalized_title
+        property_data["location"] = normalized_location
+        if not property_data.get("listed_date"):
+            property_data["listed_date"] = datetime.now().strftime("%Y-%m-%d")
+
+        # Insert property
+        result = db1.get_collection('Property').insert_one(property_data)
+        property_data["_id"] = str(result.inserted_id)
+
+        return {"message": "Property added successfully", "property": jsonable_encoder(property_data)}
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to add property: {str(e)}")
 
 @app.get("/property/category")
 async def get_property_by_category(category: str, status: str = "available"):
@@ -261,6 +335,18 @@ async def get_favorites(request: Request):
         print(f"Error getting favorites: {e}")
         return JSONResponse(status_code=200, content={"favorites": []})
 
+@app.get("/health")
+async def health_check():
+    """
+    Health check endpoint
+    """
+    try:
+        # Check database connection
+        db1.command('ping')
+        return {"status": "healthy", "service": SERVICE_NAME}
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"Service unhealthy: {str(e)}")
+
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8002)
+    uvicorn.run(app, host="0.0.0.0", port=8004)
