@@ -3,8 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 import httpx
 import os
 from dotenv import load_dotenv
-from services.common.middleware import setup_middleware
-from services.common.service_discovery import setup_service_discovery, service_registry
+from common.middleware import setup_middleware
+from common.service_discovery import setup_service_discovery, service_registry
 
 # Load environment variables
 load_dotenv()

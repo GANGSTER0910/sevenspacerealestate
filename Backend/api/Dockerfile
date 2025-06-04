@@ -1,5 +1,5 @@
 FROM python:3.12.7
-WORKDIR /app
+WORKDIR /
 
 RUN apt-get update && apt-get install -y \
     build-essential \
@@ -11,4 +11,4 @@ COPY common/ ./common/
 COPY . .
 
 EXPOSE 8003
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8003"] 
+CMD ["uvicorn", "gateway:app", "--host", "0.0.0.0", "--port", "8000"] 

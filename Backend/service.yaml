@@ -1,0 +1,102 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${username}
+      MONGO_INITDB_ROOT_PASSWORD: ${password}
+    ports:
+      - "27017:27017"
+    networks:
+      - sevenspace_network
+
+  auth_service:
+    build:
+      context: ./services/auth_service
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8001"
+    environment:
+      - DATABASE_URL=${Database_Link}
+      - JWT_SECRET_KEY=${SECRET_KEY}
+      - JWT_ALGORITHM=${Algorithm}
+      - ACCESS_TOKEN_EXPIRE_MINUTES=${Access_Token_Expire_Time}
+    depends_on:
+      - mongodb
+    networks:
+      - sevenspace_network
+
+  property_service:
+    build:
+      context: ./services/property_service
+      dockerfile: Dockerfile
+    ports:
+      - "8002:8002"
+    environment:
+      - DATABASE_URL=${Database_Link}
+      - JWT_SECRET_KEY=${SECRET_KEY}
+      - JWT_ALGORITHM=${Algorithm}
+      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
+      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
+      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
+    depends_on:
+      - mongodb
+    networks:
+      - sevenspace_network
+
+  image_service:
+    build:
+      context: .
+      dockerfile: services/image_service/Dockerfile
+    ports:
+      - "8003:8003"
+    environment:
+      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
+      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
+      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
+    volumes:
+      - ./services/image_service:/app
+    networks:
+      - sevenspace_network
+
+  notification_service:
+    build:
+      context: ./services/notification_service
+      dockerfile: Dockerfile
+    ports:
+      - "8005:8005"
+    environment:
+      - DATABASE_URL=${Database_Link}
+      - JWT_SECRET_KEY=${SECRET_KEY}
+      - JWT_ALGORITHM=${Algorithm}
+    depends_on:
+      - mongodb
+    networks:
+      - sevenspace_network
+
+  api_gateway:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - AUTH_SERVICE_URL=http://auth_service:8001
+      - PROPERTY_SERVICE_URL=http://property_service:8002
+      - IMAGE_SERVICE_URL=http://image_service:8003
+      - NOTIFICATION_SERVICE_URL=http://notification_service:8005
+      - JWT_SECRET_KEY=${SECRET_KEY}
+      - JWT_ALGORITHM=${Algorithm}
+    depends_on:
+      - auth_service
+      - property_service
+      - image_service
+      - notification_service
+    networks:
+      - sevenspace_network
+
+networks:
+  sevenspace_network:
+    driver: bridge

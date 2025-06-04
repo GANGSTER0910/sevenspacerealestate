@@ -14,7 +14,8 @@ from PIL import Image
 import io
 
 # Add the common directory to Python path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, BASE_DIR)
 from common.auth import get_current_user, require_role
 from common.middleware import setup_middleware
 from common.service_discovery import service_registry
