@@ -26,7 +26,7 @@ app = FastAPI(
 load_dotenv()
 
 # Service registration
-SERVICE_NAME = "property-service"
+SERVICE_NAME = "property_service"
 SERVICE_URL = f"http://localhost:{os.getenv('PORT', '8004')}"
 
 origins = [
@@ -349,4 +349,4 @@ async def health_check():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8004)
+    uvicorn.run(app, host="0.0.0.0", port=8002)

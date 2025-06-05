@@ -23,7 +23,7 @@ app = FastAPI(
 load_dotenv()
 
 # Service registration
-SERVICE_NAME = "notification-service"
+SERVICE_NAME = "notification_service"
 SERVICE_URL = f"http://localhost:{os.getenv('PORT', '8005')}"
 
 # Email validation regex
@@ -55,13 +55,18 @@ app.add_middleware(SessionMiddleware, secret_key=Secret_key)
 async def startup_event():
     """Register service on startup"""
     try:
+        print(f"Attempting to register service {SERVICE_NAME} at {SERVICE_URL} with API Gateway at http://api_gateway:8000/register")
         async with httpx.AsyncClient() as client:
             response = await client.post(
-                "http://localhost:8000/register",
+                "http://api_gateway:8000/register",
                 params={"service_name": SERVICE_NAME, "service_url": SERVICE_URL}
             )
-            if response.status_code == 200:
-                print(f"Service {SERVICE_NAME} registered successfully")
+            response.raise_for_status() # Raise an exception for bad status codes (4xx or 5xx)
+            print(f"Service {SERVICE_NAME} registered successfully. Response status: {response.status_code}")
+    except httpx.RequestError as exc:
+        print(f"An error occurred while requesting {exc.request.url!r}: {exc}")
+    except httpx.HTTPStatusError as exc:
+        print(f"HTTP error occurred while registering service: {exc.response.status_code} - {exc.response.text}")
     except Exception as e:
         print(f"Failed to register service: {str(e)}")
 

@@ -3,8 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 import httpx
 import os
 from dotenv import load_dotenv
-from common.middleware import setup_middleware
-from common.service_discovery import setup_service_discovery, service_registry
+from middleware import setup_middleware
+from service_discovery import setup_service_discovery, service_registry
 
 # Load environment variables
 load_dotenv()
@@ -44,6 +44,9 @@ async def route_request(path: str, request: Request):
         # Get service URL
         service_url = service_registry.get_service_url(service_name)
         
+        # Construct the path to forward, removing the service name
+        forward_path = "/".join(path.split("/")[1:])
+        
         # Forward request to service
         async with httpx.AsyncClient() as client:
             # Get request body
@@ -52,7 +55,7 @@ async def route_request(path: str, request: Request):
             # Forward request
             response = await client.request(
                 method=request.method,
-                url=f"{service_url}/{path}",
+                url=f"{service_url}/{forward_path}",
                 headers=dict(request.headers),
                 params=dict(request.query_params),
                 content=body

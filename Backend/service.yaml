@@ -22,7 +22,7 @@ services:
       - DATABASE_URL=${Database_Link}
       - JWT_SECRET_KEY=${SECRET_KEY}
       - JWT_ALGORITHM=${Algorithm}
-      - ACCESS_TOKEN_EXPIRE_MINUTES=${Access_Token_Expire_Time}
+      - Access_Token_Expire_Time=${Access_Token_Expire_Time}
     depends_on:
       - mongodb
     networks:
@@ -48,8 +48,8 @@ services:
 
   image_service:
     build:
-      context: .
-      dockerfile: services/image_service/Dockerfile
+      context: ./services/image_service
+      dockerfile: Dockerfile
     ports:
       - "8003:8003"
     environment:
@@ -66,7 +66,7 @@ services:
       context: ./services/notification_service
       dockerfile: Dockerfile
     ports:
-      - "8005:8005"
+      - "8004:8004"
     environment:
       - DATABASE_URL=${Database_Link}
       - JWT_SECRET_KEY=${SECRET_KEY}
@@ -78,15 +78,15 @@ services:
 
   api_gateway:
     build:
-      context: .
-      dockerfile: api/Dockerfile
+      context: ./api
+      dockerfile: Dockerfile
     ports:
       - "8000:8000"
     environment:
       - AUTH_SERVICE_URL=http://auth_service:8001
       - PROPERTY_SERVICE_URL=http://property_service:8002
       - IMAGE_SERVICE_URL=http://image_service:8003
-      - NOTIFICATION_SERVICE_URL=http://notification_service:8005
+      - NOTIFICATION_SERVICE_URL=http://notification_service:8004
       - JWT_SECRET_KEY=${SECRET_KEY}
       - JWT_ALGORITHM=${Algorithm}
     depends_on:

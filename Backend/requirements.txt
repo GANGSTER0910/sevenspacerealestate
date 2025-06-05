@@ -13,3 +13,4 @@ itsdangerous== 2.2.0
 pydantic==2.7.4
 httpx==0.24.1
 cloudinary==1.44.0
+Pillow==11.1.0

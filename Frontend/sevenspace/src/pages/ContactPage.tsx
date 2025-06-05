@@ -37,7 +37,7 @@ const ContactPage: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch("http://localhost:8000/contact", {
+      const response = await fetch("http://localhost:8000/notification_service/contact", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

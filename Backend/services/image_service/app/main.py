@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException, Depends
+from fastapi import FastAPI, UploadFile, File, HTTPException, Depends, Query
 from fastapi.middleware.cors import CORSMiddleware
 import cloudinary
 import cloudinary.uploader
@@ -12,16 +12,21 @@ import os
 import httpx
 from PIL import Image
 import io
+from app.auth import get_current_user, require_role
+from app.middleware import setup_middleware
+from app.service_discovery import service_registry
+
+print("Current working directory:", os.getcwd())
+print("PYTHONPATH (sys.path):", sys.path)
 
 # Add the common directory to Python path
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, BASE_DIR)
-from common.auth import get_current_user, require_role
-from common.middleware import setup_middleware
-from common.service_discovery import service_registry
+# BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# sys.path.insert(0, BASE_DIR)
 
 # Load environment variables
 load_dotenv()
+
+# print("Contents of common.middleware:", dir(common.middleware))
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -50,7 +55,7 @@ cloudinary.config(
 )
 
 # Service registration
-SERVICE_NAME = "image-service"
+SERVICE_NAME = "image_service"
 SERVICE_URL = f"http://localhost:{os.getenv('PORT', '8003')}"
 
 @app.on_event("startup")
@@ -155,10 +160,10 @@ async def upload_image(
 @app.get("/transform/{public_id}", response_model=TransformResponse)
 async def transform_image(
     public_id: str,
-    width: int = Field(300, ge=1, le=2000),
-    height: int = Field(200, ge=1, le=2000),
-    crop: str = Field("fill", pattern="^(fill|crop|scale|thumb)$"),
-    format: Optional[str] = Field(None, pattern="^(jpeg|png|gif|webp)$"),
+    width: int = Query(300, ge=1, le=2000),
+    height: int = Query(200, ge=1, le=2000),
+    crop: str = Query("fill", pattern="^(fill|crop|scale|thumb)$"),
+    format: Optional[str] = Query(None, pattern="^(jpeg|png|gif|webp)$"),
     current_user: dict = Depends(get_current_user)
 ):
     """
