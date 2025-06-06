@@ -56,7 +56,7 @@ cloudinary.config(
 
 # Service registration
 SERVICE_NAME = "image_service"
-SERVICE_URL = f"http://localhost:{os.getenv('PORT', '8003')}"
+SERVICE_URL = f"http://image_service:8003"
 
 @app.on_event("startup")
 async def startup_event():
@@ -64,7 +64,7 @@ async def startup_event():
     try:
         async with httpx.AsyncClient() as client:
             response = await client.post(
-                "http://localhost:8000/register",
+                "http://api_gateway:8000/register",
                 params={"service_name": SERVICE_NAME, "service_url": SERVICE_URL}
             )
             if response.status_code == 200:
@@ -78,7 +78,7 @@ async def shutdown_event():
     try:
         async with httpx.AsyncClient() as client:
             response = await client.post(
-                "http://localhost:8000/unregister",
+                "http://api_gateway:8000/unregister",
                 params={"service_name": SERVICE_NAME}
             )
             if response.status_code == 200:

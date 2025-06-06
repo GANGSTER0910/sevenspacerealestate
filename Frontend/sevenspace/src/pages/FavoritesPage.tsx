@@ -39,7 +39,7 @@ const FavoritesPage = () => {
           return;
         }
 
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/property/favorites`, {
+        const response = await fetch("http://localhost:8000/property_service/property/favorites", {
           credentials: 'include',
         });
 
@@ -62,7 +62,7 @@ const FavoritesPage = () => {
 
   const handleRemoveFavorite = async (propertyId: string) => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/property/${propertyId}/favorite`, {
+      const response = await fetch("http://localhost:8000/property_service/property/${propertyId}/favorite", {
         method: 'DELETE',
         credentials: 'include',
       });

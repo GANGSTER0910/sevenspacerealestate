@@ -27,7 +27,7 @@ load_dotenv()
 
 # Service registration
 SERVICE_NAME = "property_service"
-SERVICE_URL = f"http://localhost:{os.getenv('PORT', '8004')}"
+SERVICE_URL = f"http://property_service:8002"
 
 origins = [
     "http://localhost:5173",
@@ -45,7 +45,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-link = os.getenv("DataBase_Link")
+link = os.getenv("Database_Link")
 client1 = MongoClient(link)
 db1 = client1['SSRealEstate']
 fs = gridfs.GridFS(db1)
@@ -58,7 +58,7 @@ async def startup_event():
     try:
         async with httpx.AsyncClient() as client:
             response = await client.post(
-                "http://localhost:8000/register",
+                "http://api_gateway:8000/register",
                 params={"service_name": SERVICE_NAME, "service_url": SERVICE_URL}
             )
             if response.status_code == 200:
@@ -72,7 +72,7 @@ async def shutdown_event():
     try:
         async with httpx.AsyncClient() as client:
             response = await client.post(
-                "http://localhost:8000/unregister",
+                "http://api_gateway:8000/unregister",
                 params={"service_name": SERVICE_NAME}
             )
             if response.status_code == 200:
@@ -152,21 +152,25 @@ async def get_property_by_category(category: str, status: str = "available"):
 
 @app.get("/property/all")
 async def get_all_properties(status: str = "available"):
-        query = {"status": status} 
-    
-    # Debugging: Check the actual query
-        # print(f"Querying database with: {query}")
-    
-        properties = list(db1.get_collection("Property").find({"status": status}))
-        # print(properties)
-        for property in properties:
-            property["_id"] = str(property["_id"])
-    # Debugging: Check the retrieved data
-        if not properties:
-            print("No properties found matching the criteria.")
-    
-        return {"count": len(properties), "properties": jsonable_encoder(properties)}
+    query = {"status": status}
+    properties = list(db1.get_collection('Property').find(query))
+    for property in properties:
+        property["_id"] = str(property["_id"])
+    return {"count": len(properties), "properties": jsonable_encoder(properties)}
 
+@app.get("/property/home")
+async def get_home_properties():
+    query = {"status": "available"}
+    sort_criteria = [("listed_date", -1)] # -1 for descending order (recently added)
+    limit = 8
+    
+    cursor = db1.get_collection("Property").find(query).sort(sort_criteria).limit(limit)
+    properties = list(cursor)
+    
+    for property in properties:
+        property["_id"] = str(property["_id"])
+        
+    return {"count": len(properties), "properties": jsonable_encoder(properties)}
 @app.get("/property/{property_id}")
 async def get_property(property_id: str):
     try:
@@ -174,6 +178,42 @@ async def get_property(property_id: str):
         if not property_data:
             raise HTTPException(status_code=404, detail="Property not found")
         property_data["_id"] = str(property_data["_id"])
+        return property_data
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.put("/property/edit/{property_id}")
+async def get_property_for_edit(property_id: str, property: Property):
+    try:
+        property_data = db1.get_collection('Property').find_one({"_id": ObjectId(property_id)})
+        property1_data = property.dict()
+        if not property_data:
+            raise HTTPException(status_code=404, detail="Property not found")
+        property_data["_id"] = str(property_data["_id"])
+        property_data["title"] = property1_data.get("title", property_data["title"])
+        property_data["description"] = property1_data.get("description", property_data["description"])
+        property_data["property_type"] = property1_data.get("property_type", property_data["property_type"])
+        property_data["location"] = property1_data.get("location", property_data["location"])
+        property_data["price"] = property1_data.get("price", property_data["price"])
+        property_data["status"] = property1_data.get("status", property_data["status"])
+        property_data["listed_date"] = property1_data.get("listed_date", property_data["listed_date"])
+        property_data["images"] = property1_data.get("images", property_data["images"])
+        if "images" in property_data:
+            property_data["images"] = [str(image_id) for image_id in property_data["images"]]
+        else:
+            property_data["images"] = []
+        if "features" in property1_data:
+            property_data["features"] = property1_data["features"]
+        else:
+            property_data["features"] = property_data.get("features", [])
+        if "amenities" in property1_data:
+            property_data["amenities"] = property1_data["amenities"]
+        else:
+            property_data["amenities"] = property_data.get("amenities", [])
+        if "listed_date" in property1_data:
+            property_data["listed_date"] = property1_data["listed_date"]
+        else:
+            property_data["listed_date"] = property_data.get("listed_date", datetime.now().strftime("%Y-%m-%d"))    
         return property_data
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

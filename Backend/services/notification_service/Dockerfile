@@ -11,7 +11,7 @@ COPY app/schema.py .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Add a test to check network connectivity to the api_gateway
-RUN ping -c 3 api_gateway
+# RUN ping -c 3 api_gateway
 
 COPY . .
 

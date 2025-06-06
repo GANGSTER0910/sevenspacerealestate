@@ -73,7 +73,7 @@ const UserDashboard: React.FC = () => {
   const fetchFavorites = async () => {
     try {
       setIsLoadingFavorites(true);
-      const response = await fetch(`${API_URL}/property/favorites`, {
+      const response = await fetch(`${API_URL}/property_service/property/favorites`, {
         method: 'GET',
         credentials: 'include',
         headers: {
@@ -98,7 +98,7 @@ const UserDashboard: React.FC = () => {
 
   const handleRemoveFavorite = async (propertyId: string) => {
     try {
-      const response = await fetch(`${API_URL}/property/${propertyId}/favorite`, {
+      const response = await fetch(`${API_URL}/property_service/property/${propertyId}/favorite`, {
         method: 'DELETE',
         credentials: 'include',
         headers: {

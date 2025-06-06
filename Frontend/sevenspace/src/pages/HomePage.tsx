@@ -1,14 +1,24 @@
-
 import React from "react";
 import Layout from "@/components/layout/Layout";
 import Hero from "@/components/home/Hero";
 import PropertyTypeSection from "@/components/home/PropertyTypeSection";
 import PropertyGrid from "@/components/property/PropertyGrid";
-import { getFeaturedProperties } from "@/services/propertyService";
+import { useProperties } from "@/services/property.service";
+import { Property } from "@/types/property";
 
 const HomePage: React.FC = () => {
-  const featuredProperties = getFeaturedProperties();
+  const { data, isLoading, isError } = useProperties({ limit: 8, sortBy: 'listed_date' });
+
+  const featuredProperties: Property[] = data?.properties || [];
   
+  if (isLoading) {
+    return <Layout><p>Loading featured properties...</p></Layout>;
+  }
+
+  if (isError) {
+    return <Layout><p>Error loading featured properties.</p></Layout>;
+  }
+
   return (
     <Layout>
       <Hero />

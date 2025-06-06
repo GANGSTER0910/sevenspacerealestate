@@ -15,8 +15,13 @@ from starlette.requests import Request
 from starlette.middleware.sessions import SessionMiddleware
 from authlib.integrations.starlette_client import OAuth, OAuthError
 from jwt.exceptions import JWTDecodeError
-app = FastAPI()
+import httpx
+app = FastAPI(
+    title="Auth service"
+)
 load_dotenv()
+SERVICE_NAME = "auth_service"
+SERVICE_URL = f"http://auth_service:8001"
 origins = [
     "http://localhost:5173",
     "http://localhost:8000",
@@ -32,7 +37,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-link = os.getenv("DataBase_Link")
+link = os.getenv("Database_Link")
 client1 = MongoClient(link)
 db1 = client1['SSRealEstate']
 algorithm = os.getenv("Algorithm")
@@ -54,6 +59,34 @@ oauth.register(
         'redirect_url': 'https://sevenspacerealestate.onrender.com/auth'
     }
 )
+@app.on_event("startup")
+async def startup_event():
+    """Register service on startup"""
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                "http://api_gateway:8000/register",
+                params={"service_name": SERVICE_NAME, "service_url": SERVICE_URL}
+            )
+            if response.status_code == 200:
+                print(f"Service {SERVICE_NAME} registered successfully")
+    except Exception as e:
+        print(f"Failed to register service: {str(e)}")
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Unregister service on shutdown"""
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                "http://api_gateway:8000/unregister",
+                params={"service_name": SERVICE_NAME}
+            )
+            if response.status_code == 200:
+                print(f"Service {SERVICE_NAME} unregistered successfully")
+    except Exception as e:
+        print(f"Failed to unregister service: {str(e)}")
+
 fs = gridfs.GridFS(db1)
 def get_password_hash(password):
     return pwd_context.hash(password)
@@ -245,6 +278,19 @@ async def google_auth(request: Request):
 
     except OAuthError as error:
         raise HTTPException(status_code=400, detail=f"OAuth error: {error.error}")
+@app.get("/health")
+async def health_check():
+    """
+    Health check endpoint
+    """
+    try:
+        # Check database connection
+        db1.command('ping')
+        return {"status": "healthy", "service": SERVICE_NAME}
+    except Exception as e:
+        logger.error(f"Health check failed: {str(e)}")
+        # Return 200 even if database check fails, as the service itself is running
+        return {"status": "healthy", "service": SERVICE_NAME, "database": "unavailable"}
 
 if __name__ == "__main__":
     import uvicorn

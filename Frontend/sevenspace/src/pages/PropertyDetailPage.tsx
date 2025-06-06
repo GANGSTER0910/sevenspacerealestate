@@ -4,7 +4,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getPropertyById } from "@/services/propertyService";
+// import { getPropertyById } from "@/services/propertyService";
 import { toast } from "sonner";
 import { MapPin, Bed, Bath, Square, Heart, Share, Calendar, User } from "lucide-react";
 import { propertyService, Property } from '@/services/property.service';
@@ -12,7 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from '@/contexts/AuthContext';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000' || 'https://sevenspacerealestate.onrender.com';
+const API_URL =  'http://localhost:8000' ;
 
 const PropertyDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -30,7 +30,7 @@ const PropertyDetailPage: React.FC = () => {
   
   const checkFavoriteStatus = async (propertyId: string) => {
     try {
-      const response = await fetch(`${API_URL}/property/${propertyId}/favorite`, {
+      const response = await fetch(`${API_URL}/property_service/property/${propertyId}/favorite`, {
         method: 'GET',
         credentials: 'include',
         headers: {
@@ -134,8 +134,8 @@ const PropertyDetailPage: React.FC = () => {
       
       if (isFavorited) {
         // Remove from favorites
-        console.log('Attempting to remove from favorites:', `${API_URL}/property/${id}/favorite`);
-        const response = await fetch(`${API_URL}/property/${id}/favorite`, {
+        console.log('Attempting to remove from favorites:', `${API_URL}/property_service/property/${id}/favorite`);
+        const response = await fetch(`${API_URL}/property_service/property/${id}/favorite`, {
           method: 'DELETE',
           credentials: 'include',
         });
@@ -150,7 +150,7 @@ const PropertyDetailPage: React.FC = () => {
       } else {
         // Add to favorites
         console.log('Attempting to add to favorites:', `${API_URL}/property/${id}/favorite`);
-        const response = await fetch(`${API_URL}/property/${id}/favorite`, {
+        const response = await fetch(`${API_URL}/property_service/property/${id}/favorite`, {
           method: 'POST',
           credentials: 'include',
           headers: {

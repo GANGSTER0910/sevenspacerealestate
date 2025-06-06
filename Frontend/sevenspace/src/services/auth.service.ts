@@ -39,7 +39,7 @@ export const authService = {
   async login(email: string, password: string): Promise<LoginResponse> {
     try {
       // First, attempt to login
-      const loginResponse = await fetchApi('/user/login', {
+      const loginResponse = await fetchApi('/auth_service/user/login', {
         method: 'POST',
         body: { email, password }
       });
@@ -65,7 +65,7 @@ export const authService = {
   },
 
   async register(userData: any) {
-    return fetchApi('/user', {
+    return fetchApi('/auth_service/user', {
       method: 'POST',
       body: userData
     });
@@ -77,20 +77,20 @@ export const authService = {
   },
 
   async checkAuth(): Promise<AuthResponse> {
-    return fetchApi('/checkAuthentication', {
+    return fetchApi('/auth_service/checkAuthentication', {
       method: 'POST'
     });
   },
 
   async sendOTP(data: OTPData): Promise<AuthResponse> {
-    return fetchApi('/generate-otp', {
+    return fetchApi('/auth_service/generate-otp', {
       method: 'POST',
       body: data
     });
   },
 
   async verifyOTP(data: OTPVerifyData): Promise<AuthResponse> {
-    return fetchApi('/verifyotp', {
+    return fetchApi('/auth_service/verifyotp', {
       method: 'POST',
       body: data
     });
@@ -101,7 +101,7 @@ export const authService = {
   },
 
   async decodeToken(): Promise<DecodedToken> {
-    return fetchApi('/decode', {
+    return fetchApi('/auth_service/decode', {
       method: 'POST',
       credentials: 'include'
     });

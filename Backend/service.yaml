@@ -1,30 +1,20 @@
 version: '3.8'
 
 services:
-  mongodb:
-    image: mongo
-    restart: always
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: ${username}
-      MONGO_INITDB_ROOT_PASSWORD: ${password}
-    ports:
-      - "27017:27017"
-    networks:
-      - sevenspace_network
-
   auth_service:
     build:
       context: ./services/auth_service
       dockerfile: Dockerfile
     ports:
       - "8001:8001"
+    env_file: .env
     environment:
-      - DATABASE_URL=${Database_Link}
-      - JWT_SECRET_KEY=${SECRET_KEY}
-      - JWT_ALGORITHM=${Algorithm}
-      - Access_Token_Expire_Time=${Access_Token_Expire_Time}
-    depends_on:
-      - mongodb
+      - link=${Database_Link}
+      - Secret_key=${SECRET_KEY}
+      - algorithm=${Algorithm}
+      - access_token_expire_time=${Access_Token_Expire_Time}
+      - CLIENT_ID=${CLIENT_ID}
+      - CLIENT_SECRET=${CLIENT_SECRET}
     networks:
       - sevenspace_network
 
@@ -34,15 +24,9 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8002:8002"
+    env_file: .env
     environment:
-      - DATABASE_URL=${Database_Link}
-      - JWT_SECRET_KEY=${SECRET_KEY}
-      - JWT_ALGORITHM=${Algorithm}
-      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
-      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
-      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
-    depends_on:
-      - mongodb
+      - link=${Database_Link}
     networks:
       - sevenspace_network
 
@@ -52,10 +36,11 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8003:8003"
+    env_file: .env
     environment:
-      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
-      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
-      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
+      - cloud_name=${CLOUDINARY_CLOUD_NAME}
+      - api_key=${CLOUDINARY_API_KEY}
+      - api_secret=${CLOUDINARY_API_SECRET}
     volumes:
       - ./services/image_service:/app
     networks:
@@ -67,12 +52,12 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8004:8004"
+    env_file: .env
     environment:
-      - DATABASE_URL=${Database_Link}
+      - link=${Database_Link}
       - JWT_SECRET_KEY=${SECRET_KEY}
       - JWT_ALGORITHM=${Algorithm}
-    depends_on:
-      - mongodb
+      - BREVO_KEY=${Brevo_key}
     networks:
       - sevenspace_network
 
@@ -82,6 +67,7 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
+    env_file: .env
     environment:
       - AUTH_SERVICE_URL=http://auth_service:8001
       - PROPERTY_SERVICE_URL=http://property_service:8002

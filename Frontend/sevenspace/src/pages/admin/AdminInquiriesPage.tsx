@@ -44,7 +44,7 @@ const AdminInquiriesPage: React.FC = () => {
 
   const fetchMessages = async () => {
     try {
-      const response = await fetch("http://localhost:8000/contact/messages");
+      const response = await fetch("http://localhost:8000/notification_service/contact/messages");
       if (!response.ok) {
         throw new Error("Failed to fetch messages");
       }
