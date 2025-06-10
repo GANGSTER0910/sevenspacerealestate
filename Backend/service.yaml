@@ -26,6 +26,7 @@ services:
       - "8002:8002"
     env_file: .env
     environment:
+      - algorithm=${Algorithm}
       - link=${Database_Link}
     networks:
       - sevenspace_network

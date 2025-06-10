@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 import httpx
 import os
@@ -26,10 +26,10 @@ setup_service_discovery(app)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:3000", # Add your frontend origin
-        "https://sevenspacerealestate.vercel.app", # Add your Vercel deployment URL if applicable
-        "http://localhost:5173", # Add other potential frontend origins if applicable
-        "http://localhost:8000" # Add the API Gateway itself
+        "http://localhost:3000", 
+        "https://sevenspacerealestate.vercel.app",
+        "http://localhost:5173",
+        "http://localhost:8000" 
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -68,7 +68,23 @@ async def route_request(path: str, request: Request):
                 content=body
             )
             
-            return response.json()
+            # Create a new response with the service's content
+            gateway_response = Response(
+                content=response.content,
+                status_code=response.status_code,
+                media_type=response.headers.get("content-type")
+            )
+            
+            # Forward all headers from the service response
+            for key, value in response.headers.items():
+                if key.lower() == "set-cookie":
+                    # Handle multiple Set-Cookie headers
+                    for cookie in response.headers.get_list("set-cookie"):
+                        gateway_response.headers.append("set-cookie", cookie)
+                else:
+                    gateway_response.headers[key] = value
+            
+            return gateway_response
             
     except HTTPException as e:
         raise e

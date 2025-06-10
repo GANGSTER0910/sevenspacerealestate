@@ -44,7 +44,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
+algorithm = os.getenv("Algorithm")
 link = os.getenv("Database_Link")
 client1 = MongoClient(link)
 db1 = client1['SSRealEstate']
@@ -92,6 +92,43 @@ def validate_property_data(property_data: dict) -> None:
         raise HTTPException(status_code=400, detail="Location is required")
     if not property_data.get("price") or property_data["price"] <= 0:
         raise HTTPException(status_code=400, detail="Valid price is required")
+def decode_Access_token(token: str):
+    try:
+        jwt_instance = JWT()
+        secret_key = jwk_from_dict({
+            "k": Secret_key,
+            "kty": "oct"
+        })
+        
+        current_time = datetime.now(timezone.utc)    
+        payload = jwt_instance.decode(token, secret_key, algorithms=[algorithm])
+        
+        exp = payload.get('exp')
+        if exp:
+            exp_time = datetime.fromtimestamp(exp, timezone.utc)
+            if current_time > exp_time:
+                raise HTTPException(status_code=401, detail="Token has expired")
+        
+        email: str = payload.get("email")
+        role: str = payload.get("role")
+        
+        if email is None or role is None:
+            raise HTTPException(status_code=401, detail="Invalid token data")
+            
+        token_data = {
+            "email": email,
+            "role": role
+        }
+        return token_data
+        
+    except JWTDecodeError as e:
+        print(f"JWT decode error: {str(e)}")
+        if "expired" in str(e).lower():
+            raise HTTPException(status_code=401, detail="Token has expired")
+        raise HTTPException(status_code=401, detail="Invalid token")
+    except Exception as e:
+        print(f"Unexpected error in decode_Access_token: {str(e)}")
+        raise HTTPException(status_code=401, detail=str(e))
 
 @app.post("/property")
 async def add_property(property: Property, files: List[UploadFile] = File(...)):
@@ -136,7 +173,24 @@ async def add_property(property: Property, files: List[UploadFile] = File(...)):
         raise e
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to add property: {str(e)}")
+@app.delete("/property/{property_id}")
+async def delete_property(property_id: str):
+    try:
+        # Check if property exists
+        existing_property = db1.get_collection('Property').find_one({"_id": ObjectId(property_id)})
+        if not existing_property:
+            raise HTTPException(status_code=404, detail="Property not found")
 
+        # # Delete property images from GridFS
+        # for image_id in existing_property.get("images", []):
+        #     fs.delete(ObjectId(image_id))
+
+        # Delete property from the collection
+        db1.get_collection('Property').delete_one({"_id": ObjectId(property_id)})
+
+        return {"message": "Property deleted successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete property: {str(e)}")
 @app.get("/property/category")
 async def get_property_by_category(category: str, status: str = "available"):
     query = {"property_type": category}
@@ -171,50 +225,37 @@ async def get_home_properties():
         property["_id"] = str(property["_id"])
         
     return {"count": len(properties), "properties": jsonable_encoder(properties)}
-@app.get("/property/{property_id}")
-async def get_property(property_id: str):
-    try:
-        property_data = db1.get_collection('Property').find_one({"_id": ObjectId(property_id)})
-        if not property_data:
-            raise HTTPException(status_code=404, detail="Property not found")
-        property_data["_id"] = str(property_data["_id"])
-        return property_data
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
 
 @app.put("/property/edit/{property_id}")
-async def get_property_for_edit(property_id: str, property: Property):
+async def edit_property(property_id: str, property: Property):
     try:
-        property_data = db1.get_collection('Property').find_one({"_id": ObjectId(property_id)})
-        property1_data = property.dict()
-        if not property_data:
+        existing = db1.get_collection('Property').find_one({"_id": ObjectId(property_id)})
+        if not existing:
             raise HTTPException(status_code=404, detail="Property not found")
-        property_data["_id"] = str(property_data["_id"])
-        property_data["title"] = property1_data.get("title", property_data["title"])
-        property_data["description"] = property1_data.get("description", property_data["description"])
-        property_data["property_type"] = property1_data.get("property_type", property_data["property_type"])
-        property_data["location"] = property1_data.get("location", property_data["location"])
-        property_data["price"] = property1_data.get("price", property_data["price"])
-        property_data["status"] = property1_data.get("status", property_data["status"])
-        property_data["listed_date"] = property1_data.get("listed_date", property_data["listed_date"])
-        property_data["images"] = property1_data.get("images", property_data["images"])
-        if "images" in property_data:
-            property_data["images"] = [str(image_id) for image_id in property_data["images"]]
-        else:
-            property_data["images"] = []
-        if "features" in property1_data:
-            property_data["features"] = property1_data["features"]
-        else:
-            property_data["features"] = property_data.get("features", [])
-        if "amenities" in property1_data:
-            property_data["amenities"] = property1_data["amenities"]
-        else:
-            property_data["amenities"] = property_data.get("amenities", [])
-        if "listed_date" in property1_data:
-            property_data["listed_date"] = property1_data["listed_date"]
-        else:
-            property_data["listed_date"] = property_data.get("listed_date", datetime.now().strftime("%Y-%m-%d"))    
-        return property_data
+
+        property1_data = property.dict()
+        
+        updated_data = {
+            "title": property1_data.get("title", existing["title"]).strip().lower(),
+            "description": property1_data.get("description", existing.get("description", "")),
+            "property_type": property1_data.get("property_type", existing.get("property_type", "")),
+            "location": property1_data.get("location", existing["location"]).strip(),
+            "price": property1_data.get("price", existing.get("price", 0)),
+            "status": property1_data.get("status", existing.get("status", "available")),
+            "listed_date": property1_data.get("listed_date", existing.get("listed_date", datetime.now().strftime("%Y-%m-%d"))),
+            "images": [str(i) for i in property1_data.get("images", existing.get("images", []))],
+            "features": property1_data.get("features", existing.get("features", [])),
+            "amenities": property1_data.get("amenities", existing.get("amenities", []))
+        }
+
+        db1.get_collection('Property').update_one(
+            {"_id": ObjectId(property_id)},
+            {"$set": updated_data}
+        )
+
+        updated_data["_id"] = property_id
+        return {"message": "Property updated successfully", "property": jsonable_encoder(updated_data)}
+
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -309,72 +350,48 @@ async def get_favorites(request: Request):
     try:
         # Check authentication
         session = request.cookies.get('session')
-        print(f"Session cookie: {session}")
         if not session:
             raise HTTPException(status_code=401, detail="Not authenticated")
-            
-        # Get user email from token
+
+        # Decode user email from token
         user_data = decode_Access_token(session)
         user_email = user_data.get("email")
-        
-        # Get user's favorites
-        user = db1.get_collection('User').find_one({"email": user_email})
-        if not user:
-            return JSONResponse(status_code=200, content={"favorites": []})
-            
-        # Debug: Print user data
-        print(f"User data: {user}")
-        
-        # Initialize favorites array if it doesn't exist
-        if "favorites" not in user:
-            db1.get_collection('User').update_one(
-                {"email": user_email},
-                {"$set": {"favorites": []}}
-            )
-            return JSONResponse(status_code=200, content={"favorites": []})
-            
-        # Get favorite properties
-        favorite_properties = []
-        for property_id in user["favorites"]:
-            try:
-                # Debug: Print property ID
-                print(f"Processing property ID: {property_id}, type: {type(property_id)}")
-                
-                # Skip if property_id is not a string
-                if not isinstance(property_id, str):
-                    print(f"Skipping invalid property ID type: {type(property_id)}")
-                    continue
-                    
-                # Skip if property_id is empty
-                if not property_id.strip():
-                    print("Skipping empty property ID")
-                    continue
-                
-                # Convert string ID to ObjectId
-                object_id = ObjectId(property_id)
-                property_data = db1.get_collection('Property').find_one({"_id": object_id})
-                if property_data:
-                    property_data["_id"] = str(property_data["_id"])
-                    favorite_properties.append(property_data)
-                else:
-                    print(f"Property not found for ID: {property_id}")
-            except Exception as e:
-                print(f"Error processing property ID {property_id}: {str(e)}")
-                # Remove invalid property ID from favorites
-                try:
-                    db1.get_collection('User').update_one(
-                        {"email": user_email},
-                        {"$pull": {"favorites": property_id}}
-                    )
-                except Exception as update_error:
-                    print(f"Error removing invalid property ID: {str(update_error)}")
-                continue
-                
-        return JSONResponse(status_code=200, content={"favorites": favorite_properties})
-    except Exception as e:
-        print(f"Error getting favorites: {e}")
-        return JSONResponse(status_code=200, content={"favorites": []})
+        if not user_email:
+            raise HTTPException(status_code=400, detail="Invalid token")
 
+        # Find user
+        user = db1.get_collection('User').find_one({"email": user_email})
+        if not user or "favorites" not in user:
+            return {"favorites": []}
+
+        # Fetch all properties from favorites
+        favorite_properties = []
+        for prop_id_str in user["favorites"]:
+            try:
+                object_id = ObjectId(prop_id_str)
+                prop = db1.get_collection("Property").find_one({"_id": object_id})
+                if prop:
+                    prop["_id"] = str(prop["_id"])  # Convert ObjectId to str
+                    favorite_properties.append(prop)
+            except Exception as e:
+                print(f"Skipping invalid property_id: {prop_id_str}, error: {e}")
+                continue
+
+        return {"favorites": favorite_properties}
+    except Exception as e:
+        print(f"Error in get_favorites: {e}")
+        return {"favorites": []}
+
+@app.get("/property/{property_id}")
+async def get_property(property_id: str):
+    try:
+        property_data = db1.get_collection('Property').find_one({"_id": ObjectId(property_id)})
+        if not property_data:
+            raise HTTPException(status_code=404, detail="Property not found")
+        property_data["_id"] = str(property_data["_id"])
+        return property_data
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 @app.get("/health")
 async def health_check():
     """

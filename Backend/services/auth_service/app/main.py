@@ -159,8 +159,8 @@ def create_cookie(token: str):
         key="session",
         value=token,
         httponly=True,
-        secure=True,  
-        samesite='none',
+        secure=False,  
+        samesite='lax',
         max_age=3600,  
         path="/",  
         domain=None
@@ -215,7 +215,42 @@ async def create_user(user: User):
         raise he
     except Exception as e:
         raise HTTPException(400, detail=str(e))
-
+@app.delete("/user/{user_id}")
+async def delete_user(user_id: str):
+    try:
+        if not ObjectId.is_valid(user_id):
+            raise HTTPException(status_code=400, detail="Invalid user ID format")
+        
+        result = db1.get_collection('User').delete_one({"_id": ObjectId(user_id)})
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        return JSONResponse(status_code=200, content={"message": "User deleted successfully"})
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+@app.put("/user/{user_id}")
+async def update_user(user_id: str, user: User):
+    try:
+        if not ObjectId.is_valid(user_id):
+            raise HTTPException(status_code=400, detail="Invalid user ID format")
+        
+        user_dict = user.model_dump(exclude_unset=True)
+        if "password" in user_dict:
+            user_dict["password"] = get_password_hash(user_dict["password"])
+        
+        result = db1.get_collection('User').update_one({"_id": ObjectId(user_id)}, {"$set": user_dict})
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        updated_user = db1.get_collection('User').find_one({"_id": ObjectId(user_id)})
+        updated_user["_id"] = str(updated_user["_id"])
+        return JSONResponse(status_code=200, content=updated_user)
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 @app.post("/user/login")
 async def user_login(user: User_login):
     try:
@@ -225,8 +260,26 @@ async def user_login(user: User_login):
                 user_dict["_id"] = str(user_dict["_id"])
                 expire_timedelta = timedelta(hours=1)
                 user_token = create_access_token(user_dict, expire_timedelta)
-                response = create_cookie(user_token)
-                response.content = {"message": "Login successful", "role": user_dict.get("role", "user")}
+                
+                # Create response with proper headers
+                response = JSONResponse(
+                    content={
+                    "message": "Login successful",
+                    "role": user_dict.get("role", "user")
+                    }
+                )
+
+                # Set cookie with proper attributes for local development
+                response.set_cookie(
+                    key="session",
+                    value=user_token,
+                    httponly=True,
+                    secure=False,  # Set to False for local development (http)
+                    samesite='lax',  # Use 'lax' for local development
+                    max_age=3600,
+                    path="/"
+                )
+
                 return response
             else:
                 raise HTTPException(400, detail="Invalid Password")
@@ -235,7 +288,31 @@ async def user_login(user: User_login):
     except Exception as e:
         raise HTTPException(400, detail=str(e))
 
-    
+@app.post("/user/logout")
+async def user_logout(request: Request):
+    try:
+        session = request.cookies.get('session')
+        if not session:
+            raise HTTPException(status_code=401, detail="No session token found")
+        
+        response = JSONResponse(content={"message": "Logout successful"})
+        response.delete_cookie("session")
+        return response
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/user/all")
+async def get_all_users():
+    try:
+        users = db1.get_collection('User').find()
+        user_list = []
+        for user in users:
+            user["_id"] = str(user["_id"])
+            user_list.append(user)
+        return {"users": user_list}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
 @app.post("/verifyotp")
 async def verify_otp(otp : otp_verify, otp_cookie : str=Cookie(None)):
     if not otp_cookie:
