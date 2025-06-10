@@ -51,7 +51,7 @@ const Hero: React.FC = () => {
       <div className="lg:absolute lg:inset-y-0 lg:right-0 lg:w-1/2">
         <img
           className="h-56 w-full object-cover sm:h-72 md:h-96 lg:w-full lg:h-full"
-          src="/lovable-uploads/5f8c14d4-6d14-4ff2-8844-b9bfecf97271.png"
+          src="https://res.cloudinary.com/dzhwkg2io/image/upload/v1749571470/properties/iderumqv5usp8pxvq3s9.jpg"
           alt="Modern property"
         />
       </div>
