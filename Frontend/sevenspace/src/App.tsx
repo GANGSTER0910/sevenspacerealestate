@@ -27,6 +27,7 @@ import AdminInquiriesPage from "./pages/admin/AdminInquiriesPage";
 import AdminAnalyticsPage from "./pages/admin/AdminAnalyticsPage";
 import AdminSettingsPage from "./pages/admin/AdminSettingsPage";
 import AdminHelpPage from "./pages/admin/AdminHelpPage";
+import EditPropertyPage from '@/pages/admin/EditPropertyPage';
 
 // Other
 import NotFound from "./pages/NotFound";
@@ -149,6 +150,8 @@ const App = () => (
                     </ProtectedRoute>
                   }
                 />
+                <Route path="/admin/properties/add" element={<AddPropertyPage />} />
+                <Route path="/admin/properties/edit/:propertyId" element={<EditPropertyPage />} />
               </Routes>
             </div>
           </TooltipProvider>

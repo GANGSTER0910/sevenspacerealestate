@@ -25,7 +25,7 @@ const PropertyPage: React.FC = () => {
       setFilterOptions(prev => ({ ...prev, category: typeFromUrl }));
     }
   }, [typeFromUrl]);
-
+  
   const handleFilter = (filters: PropertyFilterOptions) => {
     console.log("Filtering with:", filters);
     try {

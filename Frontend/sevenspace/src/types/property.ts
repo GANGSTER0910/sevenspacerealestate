@@ -1,22 +1,22 @@
-export type PropertyType = 'apartment' | 'flat' | 'pg' | 'hostel' | 'cottage' | 'house' | 'villa';
+export type PropertyType = 'Apartment' | 'House' | 'Flat' | 'Cottage' | 'PG' | 'Hostel';
 
-export type PropertyStatus = 'available' | 'rented' | 'sold' | 'pending';
+export type PropertyStatus = 'available' | 'sold' | 'pending';
 
 export interface Property {
   _id: string;
   title: string;
-  type: PropertyType;
+  property_type: PropertyType;
   description: string;
   price: number;
   location: string;
-  area: number; // in sq.ft.
-  bedrooms: number;
-  bathrooms: number;
+  area_sqft?: number;
+  bedrooms?: number;
+  bathrooms?: number;
   amenities: string[];
   images: string[];
   status: PropertyStatus;
-  listedDate: string;
-  featured?: boolean;
+  listed_date?: string;
+  features?: string[];
 }
 
 export interface PropertyFilterOptions {

@@ -1,10 +1,9 @@
-
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { getAllProperties, deleteProperty } from "@/services/propertyService";
+import { propertyService } from "@/services/property.service";
 import { Property } from "@/types/property";
 import { useToast } from "@/components/ui/use-toast";
 import { 
@@ -29,29 +28,61 @@ import {
 import { Plus, Search, Edit, Trash2, Eye } from "lucide-react";
 
 const AdminPropertiesPage: React.FC = () => {
-  const [properties, setProperties] = useState<Property[]>(getAllProperties());
+  const [properties, setProperties] = useState<Property[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
-  };
+  useEffect(() => {
+    fetchProperties();
+  }, []);
 
-  const handleDelete = (id: string) => {
-    const deleted = deleteProperty(id);
-    if (deleted) {
-      setProperties(properties.filter(property => property.id !== id));
-      toast({
-        title: "Property Deleted",
-        description: "The property has been deleted successfully.",
-      });
-    } else {
+  const fetchProperties = async () => {
+    try {
+      setIsLoading(true);
+      const response = await propertyService.getAll();
+      setProperties(response.properties);
+    } catch (error) {
+      console.error('Error fetching properties:', error);
       toast({
         title: "Error",
-        description: "Failed to delete the property.",
+        description: "Failed to fetch properties",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDelete = async (propertyId: string) => {
+    try {
+      await propertyService.delete(propertyId);
+      setProperties(properties.filter(property => property._id !== propertyId));
+      toast({
+        title: "Success",
+        description: "Property deleted successfully",
+      });
+    } catch (error) {
+      console.error('Error deleting property:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete property",
         variant: "destructive",
       });
     }
+  };
+
+  const handleEdit = (propertyId: string) => {
+    navigate(`/admin/properties/edit/${propertyId}`);
+  };
+
+  const handleAdd = () => {
+    navigate('/admin/properties/add');
+  };
+
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
   };
 
   const filteredProperties = properties.filter(property => 
@@ -80,12 +111,13 @@ const AdminPropertiesPage: React.FC = () => {
             className="pl-8"
           />
         </div>
-        <Link to="/admin/properties/add">
-          <Button className="bg-realestate-primary hover:bg-realestate-secondary">
+        <Button 
+          onClick={handleAdd}
+          className="bg-realestate-primary hover:bg-realestate-secondary"
+        >
             <Plus className="h-4 w-4 mr-2" />
             Add Property
           </Button>
-        </Link>
       </div>
 
       <div className="bg-white rounded-lg shadow">
@@ -101,7 +133,13 @@ const AdminPropertiesPage: React.FC = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredProperties.length === 0 ? (
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center py-8">
+                  Loading properties...
+                </TableCell>
+              </TableRow>
+            ) : filteredProperties.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center py-8 text-gray-500">
                   No properties found
@@ -109,7 +147,7 @@ const AdminPropertiesPage: React.FC = () => {
               </TableRow>
             ) : (
               filteredProperties.map((property) => (
-                <TableRow key={property.id}>
+                <TableRow key={property._id}>
                   <TableCell className="font-medium">
                     <div className="flex items-center">
                       <img
@@ -137,16 +175,18 @@ const AdminPropertiesPage: React.FC = () => {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end space-x-2">
-                      <Link to={`/property/${property.id}`}>
+                      <Link to={`/property/${property._id}`}>
                         <Button variant="ghost" size="icon">
                           <Eye className="h-4 w-4" />
                         </Button>
                       </Link>
-                      <Link to={`/admin/properties/edit/${property.id}`}>
-                        <Button variant="ghost" size="icon">
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={() => handleEdit(property._id)}
+                      >
                           <Edit className="h-4 w-4" />
                         </Button>
-                      </Link>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button variant="ghost" size="icon">
@@ -164,7 +204,7 @@ const AdminPropertiesPage: React.FC = () => {
                           <AlertDialogFooter>
                             <AlertDialogCancel>Cancel</AlertDialogCancel>
                             <AlertDialogAction 
-                              onClick={() => handleDelete(property.id)}
+                              onClick={() => handleDelete(property._id)}
                               className="bg-red-500 hover:bg-red-600"
                             >
                               Delete

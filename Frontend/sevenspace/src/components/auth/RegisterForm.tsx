@@ -25,7 +25,6 @@ type FormValues = z.infer<typeof formSchema>;
 
 const RegisterForm: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const { register } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -42,18 +41,35 @@ const RegisterForm: React.FC = () => {
   const onSubmit = async (values: FormValues) => {
     setIsLoading(true);
     try {
-      const success = await register(
-        values.email,
-        values.password,
-        values.phone ? parseInt(values.phone) : undefined
-      );
-      if (success) {
-        navigate("/dashboard");
+      const response = await fetch('http://localhost:8000/auth_service/user', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          email: values.email,
+          password: values.password,
+          phone: values.phone ? parseInt(values.phone) : undefined,
+          role: "user" // Default role for new registrations
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Registration failed');
       }
+
+      toast({
+        title: "Success",
+        description: "Account created successfully!",
+      });
+      
+      navigate("/user/dashboard");
     } catch (error) {
       toast({
         title: "Error",
-        description: "An unexpected error occurred",
+        description: error instanceof Error ? error.message : "Registration failed",
         variant: "destructive",
       });
     } finally {

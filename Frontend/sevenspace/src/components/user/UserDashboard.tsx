@@ -33,7 +33,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000' || 'http
 const UserDashboard: React.FC = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("profile");
-  const [favorites, setFavorites] = useState<Property[]>([]);
+  const [favorites, setFavorites] = useState([]);
   const [isLoadingFavorites, setIsLoadingFavorites] = useState(false);
   
   // Add form state
@@ -70,33 +70,37 @@ const UserDashboard: React.FC = () => {
     }
   }, [activeTab]);
 
-  const fetchFavorites = async () => {
-    try {
-      setIsLoadingFavorites(true);
-      const response = await fetch(`${API_URL}/property_service/property/favorites`, {
-        method: 'GET',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch favorites');
+const fetchFavorites = async () => {
+  try {
+    setIsLoadingFavorites(true);
+    
+    // First, get the list of favorite IDs
+    const response = await fetch(`${API_URL}/property_service/property/favorites`, {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
       }
+    });
 
-      const data = await response.json();
-      setFavorites(data.favorites);
-    } catch (error) {
-      console.error('Error fetching favorites:', error);
-      toast.error("Failed to load favorites");
-    } finally {
-      setIsLoadingFavorites(false);
+    if (!response.ok) {
+      throw new Error('Failed to fetch favorites');
     }
-  };
 
-  const handleRemoveFavorite = async (propertyId: string) => {
+    const data = await response.json();
+    console.log(data);
+    // const propertyIds = data.favorites;
+    setFavorites(data.favorites );
+    
+  } catch (error) {
+    console.error('Error fetching favorites:', error);
+    toast.error("Failed to load favorites");
+  } finally {
+    setIsLoadingFavorites(false);
+  }
+};
+const handleRemoveFavorite = async (propertyId: string) => {
     try {
       const response = await fetch(`${API_URL}/property_service/property/${propertyId}/favorite`, {
         method: 'DELETE',

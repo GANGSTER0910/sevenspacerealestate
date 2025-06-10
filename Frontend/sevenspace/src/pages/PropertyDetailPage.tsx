@@ -45,6 +45,7 @@ const PropertyDetailPage: React.FC = () => {
       } else if (response.status === 404) {
         // Not found means it's not favorited
         setIsFavorited(false);
+        navigate('/login'); // Redirect to login if not found
       } else {
         console.error('Failed to check favorite status:', response.status, response.statusText);
         setIsFavorited(false); // Assume not favorited on other errors

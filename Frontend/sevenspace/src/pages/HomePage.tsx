@@ -18,7 +18,7 @@ const HomePage: React.FC = () => {
   if (isError) {
     return <Layout><p>Error loading featured properties.</p></Layout>;
   }
-
+  
   return (
     <Layout>
       <Hero />

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,21 +8,56 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import AdminLayout from "@/components/admin/AdminLayout";
+import { Property } from '@/types/property';
 
-const AddPropertyPage = () => {
+const EditPropertyPage = () => {
+  const { propertyId } = useParams<{ propertyId: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [property, setProperty] = useState<Property | null>(null);
+
+  useEffect(() => {
+    fetchProperty();
+  }, [propertyId]);
+
+  const fetchProperty = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch(`http://localhost:8000/property_service/property/${propertyId}`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch property');
+      }
+
+      const data = await response.json();
+      setProperty(data);
+    } catch (error) {
+      console.error('Error fetching property:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch property details",
+        variant: "destructive",
+      });
+      navigate('/admin/properties');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!propertyId) return;
+    
     setIsSubmitting(true);
 
     try {
       const formData = new FormData(e.currentTarget);
-      
-      // Create the property data object
       const propertyData = {
         title: formData.get('title') as string,
         description: formData.get('description') as string,
@@ -34,42 +69,53 @@ const AddPropertyPage = () => {
         bathrooms: formData.get('bathrooms') ? parseInt(formData.get('bathrooms') as string) : undefined,
         amenities: (formData.get('amenities') as string).split(',').map(a => a.trim()),
         status: formData.get('status') as string || 'available',
+        images: property?.images || [],
       };
 
-      // Create a new FormData for the request
-      const requestData = new FormData();
-      
-      // Add the property data as a JSON string
-      requestData.append('property', JSON.stringify(propertyData));
-      
-      // Add files if any
       if (selectedFiles.length > 0) {
+        const imageFormData = new FormData();
         selectedFiles.forEach(file => {
-          requestData.append('files', file);
+          imageFormData.append('files', file);
         });
+        
+        const imageResponse = await fetch('http://localhost:8000/property_service/upload', {
+          method: 'POST',
+          credentials: 'include',
+          body: imageFormData
+        });
+        
+        if (!imageResponse.ok) {
+          throw new Error('Failed to upload images');
+        }
+        
+        const imageData = await imageResponse.json();
+        propertyData.images = imageData.image_ids;
       }
 
-      const response = await fetch('http://localhost:8000/property_service/property', {
-        method: 'POST',
+      const response = await fetch(`http://localhost:8000/property_service/property/edit/${propertyId}`, {
+        method: 'PUT',
         credentials: 'include',
-        body: requestData
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(propertyData)
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.detail || 'Failed to add property');
+        throw new Error(errorData.detail || 'Failed to update property');
       }
 
       toast({
         title: "Success",
-        description: "Property added successfully",
+        description: "Property updated successfully",
       });
       
       navigate('/admin/properties');
     } catch (error) {
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to add property",
+        description: error instanceof Error ? error.message : "Failed to update property",
         variant: "destructive",
       });
     } finally {
@@ -83,24 +129,57 @@ const AddPropertyPage = () => {
     }
   };
 
+  if (isLoading) {
+    return (
+      <AdminLayout title="Edit Property">
+        <div className="container mx-auto px-4 py-8">
+          <Card>
+            <CardContent className="flex items-center justify-center h-64">
+              <p>Loading property details...</p>
+            </CardContent>
+          </Card>
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  if (!property) {
+    return (
+      <AdminLayout title="Edit Property">
+        <div className="container mx-auto px-4 py-8">
+          <Card>
+            <CardContent className="flex items-center justify-center h-64">
+              <p>Property not found</p>
+            </CardContent>
+          </Card>
+        </div>
+      </AdminLayout>
+    );
+  }
+
   return (
-    <AdminLayout title="Add Property">
+    <AdminLayout title="Edit Property">
       <div className="container mx-auto px-4 py-8">
         <Card>
           <CardHeader>
-            <CardTitle>Add New Property</CardTitle>
+            <CardTitle>Edit Property</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="title">Title</Label>
-                  <Input id="title" name="title" required />
+                  <Input 
+                    id="title" 
+                    name="title" 
+                    defaultValue={property.title}
+                    required 
+                  />
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="property_type">Property Type</Label>
-                  <Select name="property_type" required>
+                  <Select name="property_type" defaultValue={property.property_type} required>
                     <SelectTrigger>
                       <SelectValue placeholder="Select type" />
                     </SelectTrigger>
@@ -117,32 +196,63 @@ const AddPropertyPage = () => {
 
                 <div className="space-y-2">
                   <Label htmlFor="location">Location</Label>
-                  <Input id="location" name="location" required />
+                  <Input 
+                    id="location" 
+                    name="location" 
+                    defaultValue={property.location}
+                    required 
+                  />
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="price">Price</Label>
-                  <Input id="price" name="price" type="number" min="0" step="0.01" required />
+                  <Input 
+                    id="price" 
+                    name="price" 
+                    type="number" 
+                    min="0" 
+                    step="0.01" 
+                    defaultValue={property.price}
+                    required 
+                  />
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="area_sqft">Area (sq ft)</Label>
-                  <Input id="area_sqft" name="area_sqft" type="number" min="0" />
+                  <Input 
+                    id="area_sqft" 
+                    name="area_sqft" 
+                    type="number" 
+                    min="0"
+                    defaultValue={property.area_sqft} 
+                  />
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="bedrooms">Bedrooms</Label>
-                  <Input id="bedrooms" name="bedrooms" type="number" min="0" />
+                  <Input 
+                    id="bedrooms" 
+                    name="bedrooms" 
+                    type="number" 
+                    min="0"
+                    defaultValue={property.bedrooms} 
+                  />
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="bathrooms">Bathrooms</Label>
-                  <Input id="bathrooms" name="bathrooms" type="number" min="0" />
+                  <Input 
+                    id="bathrooms" 
+                    name="bathrooms" 
+                    type="number" 
+                    min="0"
+                    defaultValue={property.bathrooms} 
+                  />
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="status">Status</Label>
-                  <Select name="status" defaultValue="available">
+                  <Select name="status" defaultValue={property.status}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select status" />
                     </SelectTrigger>
@@ -156,25 +266,37 @@ const AddPropertyPage = () => {
 
                 <div className="space-y-2">
                   <Label htmlFor="amenities">Amenities (comma-separated)</Label>
-                  <Input id="amenities" name="amenities" placeholder="pool, garden, parking" />
+                  <Input 
+                    id="amenities" 
+                    name="amenities" 
+                    placeholder="pool, garden, parking"
+                    defaultValue={property.amenities?.join(', ')} 
+                  />
                 </div>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="description">Description</Label>
-                <Textarea id="description" name="description" required />
+                <Textarea 
+                  id="description" 
+                  name="description" 
+                  defaultValue={property.description}
+                  required 
+                />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="images">Images</Label>
+                <Label htmlFor="images">Update Images (Optional)</Label>
                 <Input
                   id="images"
                   type="file"
                   multiple
                   accept="image/*"
                   onChange={handleFileChange}
-                  required
                 />
+                <p className="text-sm text-gray-500">
+                  Leave empty to keep existing images. Select new images to replace all existing ones.
+                </p>
               </div>
 
               <div className="flex justify-end gap-4">
@@ -186,7 +308,7 @@ const AddPropertyPage = () => {
                   Cancel
                 </Button>
                 <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? 'Adding Property...' : 'Add Property'}
+                  {isSubmitting ? 'Updating Property...' : 'Update Property'}
                 </Button>
               </div>
             </form>
@@ -197,4 +319,4 @@ const AddPropertyPage = () => {
   );
 };
 
-export default AddPropertyPage;
+export default EditPropertyPage;
