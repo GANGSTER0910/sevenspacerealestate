@@ -1,6 +1,6 @@
 export type PropertyType = 'Apartment' | 'House' | 'Flat' | 'Cottage' | 'PG' | 'Hostel';
 
-export type PropertyStatus = 'available' | 'sold' | 'pending';
+export type PropertyStatus = 'available' | 'sold' | 'pending' | 'rented';
 
 export interface Property {
   _id: string;

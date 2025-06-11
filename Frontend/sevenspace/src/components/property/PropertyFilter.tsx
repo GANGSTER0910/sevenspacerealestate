@@ -97,7 +97,7 @@ const PropertyFilter: React.FC<PropertyFilterProps> = ({ onFilter, initialType }
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Max Price: ${priceRange[0]}
+            Max Price: ₹{priceRange[0]}
           </label>
           <Slider
             defaultValue={[5000]}

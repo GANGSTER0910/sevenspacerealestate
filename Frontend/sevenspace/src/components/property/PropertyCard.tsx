@@ -10,9 +10,9 @@ interface PropertyCardProps {
 
 const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
   const formatPrice = (price: number) => {
-    return price.toLocaleString('en-US', {
+    return price.toLocaleString('en-IN', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'INR',
       maximumFractionDigits: 0
     });
   };
@@ -55,7 +55,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
         <p className="mt-3 text-xl font-bold text-realestate-secondary">
           {formatPrice(property.price)}
           <span className="text-sm font-normal text-gray-500">
-            {property.type === 'pg' || property.type === 'hostel' ? '/month' : ''}
+            {property.property_type === 'PG' || property.property_type === 'Hostel' ? '/month' : ''}
           </span>
         </p>
         
@@ -72,7 +72,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
           
           <div className="flex items-center">
             <Square className="h-4 w-4 mr-1" />
-            <span>{property.area} sq.ft.</span>
+            <span>{property.area_sqft} sq.ft.</span>
           </div>
         </div>
       </div>

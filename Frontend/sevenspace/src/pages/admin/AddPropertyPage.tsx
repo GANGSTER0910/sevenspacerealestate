@@ -22,7 +22,28 @@ const AddPropertyPage = () => {
     try {
       const formData = new FormData(e.currentTarget);
       
-      // Create the property data object
+      // ... inside handleSubmit
+let imageUrls: string[] = [];
+if (selectedFiles.length > 0) {
+  const imageFormData = new FormData();
+  selectedFiles.forEach(file => {
+    imageFormData.append('file', file);
+  });
+
+  const uploadResponse = await fetch('http://localhost:8000/image_service/upload?folder=properties', {
+    method: 'POST',
+    credentials: 'include',
+    body: imageFormData
+  });
+
+  if (!uploadResponse.ok) {
+    throw new Error('Failed to upload images');
+  }
+
+  const imageData = await uploadResponse.json();
+  imageUrls = imageData.map((img: any) => img.url);
+}
+      // Create the property data object with image URLs
       const propertyData = {
         title: formData.get('title') as string,
         description: formData.get('description') as string,
@@ -34,25 +55,17 @@ const AddPropertyPage = () => {
         bathrooms: formData.get('bathrooms') ? parseInt(formData.get('bathrooms') as string) : undefined,
         amenities: (formData.get('amenities') as string).split(',').map(a => a.trim()),
         status: formData.get('status') as string || 'available',
+        images: imageUrls, // Use the uploaded image URLs
       };
 
-      // Create a new FormData for the request
-      const requestData = new FormData();
-      
-      // Add the property data as a JSON string
-      requestData.append('property', JSON.stringify(propertyData));
-      
-      // Add files if any
-      if (selectedFiles.length > 0) {
-        selectedFiles.forEach(file => {
-          requestData.append('files', file);
-        });
-      }
-
+      // Create property with the image URLs
       const response = await fetch('http://localhost:8000/property_service/property', {
         method: 'POST',
         credentials: 'include',
-        body: requestData
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(propertyData)
       });
 
       if (!response.ok) {

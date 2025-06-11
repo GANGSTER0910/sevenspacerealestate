@@ -8,29 +8,29 @@ const mapBackendToFrontendProperty = (prop: any): PropertyType => {
   return {
     _id: String(prop._id),
     title: String(prop.title),
-    type: prop.property_type as PropertyTypeEnum,
+    property_type: prop.property_type as PropertyTypeEnum,
     description: String(prop.description),
     price: Number(prop.price),
     location: String(prop.location),
-    area,
+    area_sqft: parseFloat(prop.area_sqft), // Ensure area is a number with 2 decimal places
     bedrooms: Number(prop.bedrooms || 0),
     bathrooms: Number(prop.bathrooms || 0),
     amenities: Array.isArray(prop.amenities) ? prop.amenities : [],
     images: Array.isArray(prop.images) ? prop.images : [],
     status: (prop.status || 'available') as PropertyStatus,
-    listedDate: String(prop.listed_date || new Date().toISOString().split('T')[0]),
-    featured: Boolean(prop.featured)
+    listed_date: String(prop.listed_date || new Date().toISOString().split('T')[0]),
+    features: Array.isArray(prop.features) ? prop.features : [],
   };
 };
 
 // Helper function to map frontend property to backend property type
 const mapFrontendToBackendProperty = (prop: Omit<PropertyType, '_id'>) => {
-  const area_sqft = typeof prop.area === 'number' ? prop.area : 0;
+  const area_sqft = typeof prop.area_sqft === 'number' ? prop.area_sqft : 0;
   return {
     ...prop,
-    property_type: prop.type,
+    property_type: prop.property_type,
     area_sqft,
-    listed_date: prop.listedDate
+    listed_date: prop.listed_date
   };
 };
 
@@ -149,17 +149,17 @@ export const propertyService = {
       body: JSON.stringify({
         title: property.title,
         description: property.description,
-        property_type: property.type,
+        property_type: property.property_type,
         location: property.location,
         price: property.price,
-        area_sqft: property.area,
+        area_sqft: property.area_sqft,
         bedrooms: property.bedrooms,
         bathrooms: property.bathrooms,
         amenities: property.amenities,
         images: property.images,
         status: property.status,
-        listed_date: property.listedDate,
-        featured: property.featured
+        listed_date: property.listed_date,
+        featured: property.features
       })
     });
     return mapBackendToFrontendProperty(response);

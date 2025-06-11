@@ -11,50 +11,43 @@ import sys
 import os
 import httpx
 from PIL import Image
+from starlette.middleware.sessions import SessionMiddleware
 import io
 from app.auth import get_current_user, require_role
 from app.middleware import setup_middleware
-from app.service_discovery import service_registry
 
-print("Current working directory:", os.getcwd())
-print("PYTHONPATH (sys.path):", sys.path)
 
-# Add the common directory to Python path
-# BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# sys.path.insert(0, BASE_DIR)
-
-# Load environment variables
 load_dotenv()
 
-# print("Contents of common.middleware:", dir(common.middleware))
-
-# Initialize FastAPI app
 app = FastAPI(
     title="Image Service",
     description="Microservice for handling image uploads and transformations",
     version="1.0.0"
 )
 
-# Setup middleware
 setup_middleware(app)
+origins = [
+    "http://localhost:5173",
+    "http://localhost:8000",
+    "https://sevenspacerealestate.vercel.app",
+    "http://localhost:3000",
+]  
 
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Cloudinary configuration
+Secret_key = os.getenv("SECRET_KEY")
 cloudinary.config(
     cloud_name=os.getenv('CLOUDINARY_CLOUD_NAME'),
     api_key=os.getenv('CLOUDINARY_API_KEY'),
     api_secret=os.getenv('CLOUDINARY_API_SECRET')
 )
-
-# Service registration
+app.add_middleware(SessionMiddleware, secret_key=Secret_key)
 SERVICE_NAME = "image_service"
 SERVICE_URL = f"http://image_service:8003"
 
@@ -124,34 +117,32 @@ def validate_image(file: UploadFile) -> tuple[bytes, str, int]:
     return contents, format, len(contents)
 
 # Routes
-@app.post("/upload", response_model=ImageResponse)
+@app.post("/upload", response_model=List[ImageResponse])
 async def upload_image(
-    file: UploadFile = File(...),
+    file: List[UploadFile] = File(...),
     folder: str = "properties",
-    current_user: dict = Depends(get_current_user)
+    # current_user: dict = Depends(get_current_user)
 ):
-    """
-    Upload an image to Cloudinary
-    """
     try:
-        # Validate and process image
-        contents, format, size = validate_image(file)
-        
-        # Upload to Cloudinary
-        result = cloudinary.uploader.upload(
-            io.BytesIO(contents),
-            folder=folder,
-            resource_type="auto",
-            format=format
-        )
-        
-        return ImageResponse(
+        responses=[]
+        for i in file:
+            contents, format, size = validate_image(i)
+            result = cloudinary.uploader.upload(
+                io.BytesIO(contents),
+                folder=folder,
+                resource_type="auto",
+                format=format
+            )
+            responses.append(ImageResponse(
             url=result['secure_url'],
             public_id=result['public_id'],
             created_at=datetime.now(),
             size=size,
             format=format
-        )
+        ))
+        if len(responses) == 1:
+            return responses[0]
+        return responses
     except HTTPException as e:
         raise e
     except Exception as e:
@@ -164,7 +155,7 @@ async def transform_image(
     height: int = Query(200, ge=1, le=2000),
     crop: str = Query("fill", pattern="^(fill|crop|scale|thumb)$"),
     format: Optional[str] = Query(None, pattern="^(jpeg|png|gif|webp)$"),
-    current_user: dict = Depends(get_current_user)
+    # current_user: dict = Depends(get_current_user)
 ):
     """
     Transform an image with specified dimensions

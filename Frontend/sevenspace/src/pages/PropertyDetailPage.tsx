@@ -214,9 +214,9 @@ const PropertyDetailPage: React.FC = () => {
   };
   
   const formatPrice = (price: number) => {
-    return price.toLocaleString('en-US', {
+    return price.toLocaleString('en-IN', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'INR',
       maximumFractionDigits: 0
     });
   };

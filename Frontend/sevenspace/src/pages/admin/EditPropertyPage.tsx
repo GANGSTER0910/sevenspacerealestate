@@ -58,6 +58,29 @@ const EditPropertyPage = () => {
 
     try {
       const formData = new FormData(e.currentTarget);
+      
+      // First upload new images if any
+      let imageUrls: string[] = property?.images || [];
+      if (selectedFiles.length > 0) {
+      const imageFormData = new FormData();
+      selectedFiles.forEach(file => {
+      imageFormData.append('file', file);
+  });
+
+  const uploadResponse = await fetch('http://localhost:8000/image_service/upload?folder=properties', {
+    method: 'POST',
+    credentials: 'include',
+    body: imageFormData
+  });
+
+  if (!uploadResponse.ok) {
+    throw new Error('Failed to upload images');
+  }
+
+  const imageData = await uploadResponse.json();
+  imageUrls = imageData.map((img: any) => img.url);
+}
+
       const propertyData = {
         title: formData.get('title') as string,
         description: formData.get('description') as string,
@@ -69,28 +92,8 @@ const EditPropertyPage = () => {
         bathrooms: formData.get('bathrooms') ? parseInt(formData.get('bathrooms') as string) : undefined,
         amenities: (formData.get('amenities') as string).split(',').map(a => a.trim()),
         status: formData.get('status') as string || 'available',
-        images: property?.images || [],
+        images: imageUrls, // Use the uploaded image URLs
       };
-
-      if (selectedFiles.length > 0) {
-        const imageFormData = new FormData();
-        selectedFiles.forEach(file => {
-          imageFormData.append('files', file);
-        });
-        
-        const imageResponse = await fetch('http://localhost:8000/property_service/upload', {
-          method: 'POST',
-          credentials: 'include',
-          body: imageFormData
-        });
-        
-        if (!imageResponse.ok) {
-          throw new Error('Failed to upload images');
-        }
-        
-        const imageData = await imageResponse.json();
-        propertyData.images = imageData.image_ids;
-      }
 
       const response = await fetch(`http://localhost:8000/property_service/property/edit/${propertyId}`, {
         method: 'PUT',

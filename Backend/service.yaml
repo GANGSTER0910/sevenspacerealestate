@@ -39,11 +39,14 @@ services:
       - "8003:8003"
     env_file: .env
     environment:
+      - Secret_key=${SECRET_KEY}
       - cloud_name=${CLOUDINARY_CLOUD_NAME}
       - api_key=${CLOUDINARY_API_KEY}
       - api_secret=${CLOUDINARY_API_SECRET}
-    volumes:
-      - ./services/image_service:/app
+    depends_on:
+      - api_gateway
+    # volumes:
+    #   - ./services/image_service:/app
     networks:
       - sevenspace_network
 
@@ -79,7 +82,7 @@ services:
     depends_on:
       - auth_service
       - property_service
-      - image_service
+      # - image_service
       - notification_service
     networks:
       - sevenspace_network

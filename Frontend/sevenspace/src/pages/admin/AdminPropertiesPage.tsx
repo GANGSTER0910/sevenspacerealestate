@@ -88,13 +88,13 @@ const AdminPropertiesPage: React.FC = () => {
   const filteredProperties = properties.filter(property => 
     property.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     property.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    property.type.toLowerCase().includes(searchTerm.toLowerCase())
+    property.property_type.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const formatPrice = (price: number) => {
-    return price.toLocaleString('en-US', {
+    return price.toLocaleString('en-IN', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'INR',
       maximumFractionDigits: 0
     });
   };
@@ -159,7 +159,7 @@ const AdminPropertiesPage: React.FC = () => {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <span className="capitalize">{property.type}</span>
+                    <span className="capitalize">{property.property_type}</span>
                   </TableCell>
                   <TableCell>{property.location}</TableCell>
                   <TableCell>{formatPrice(property.price)}</TableCell>
