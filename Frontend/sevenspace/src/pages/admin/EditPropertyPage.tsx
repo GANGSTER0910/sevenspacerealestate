@@ -62,24 +62,30 @@ const EditPropertyPage = () => {
       // First upload new images if any
       let imageUrls: string[] = property?.images || [];
       if (selectedFiles.length > 0) {
-      const imageFormData = new FormData();
-      selectedFiles.forEach(file => {
-      imageFormData.append('file', file);
-  });
+        imageUrls = []; // Clear existing images if uploading new ones
+        for (const file of selectedFiles) {
+          const imageFormData = new FormData();
+          imageFormData.append('file', file);
 
-  const uploadResponse = await fetch('http://localhost:8000/image_service/upload?folder=properties', {
-    method: 'POST',
-    credentials: 'include',
-    body: imageFormData
-  });
+          const uploadResponse = await fetch('http://localhost:8003/upload?folder=properties', {
+            method: 'POST',
+            credentials: 'include',
+            body: imageFormData
+          });
 
-  if (!uploadResponse.ok) {
-    throw new Error('Failed to upload images');
-  }
+          if (!uploadResponse.ok) {
+            throw new Error('Failed to upload images');
+          }
 
-  const imageData = await uploadResponse.json();
-  imageUrls = imageData.map((img: any) => img.url);
-}
+         const imageData = await uploadResponse.json();
+const urls = imageData
+  .flat() // flatten one level
+  .map((item: any) => item.url)
+  .filter(Boolean);
+
+imageUrls.push(...urls);
+        }
+      }
 
       const propertyData = {
         title: formData.get('title') as string,
@@ -92,7 +98,7 @@ const EditPropertyPage = () => {
         bathrooms: formData.get('bathrooms') ? parseInt(formData.get('bathrooms') as string) : undefined,
         amenities: (formData.get('amenities') as string).split(',').map(a => a.trim()),
         status: formData.get('status') as string || 'available',
-        images: imageUrls, // Use the uploaded image URLs
+        images: imageUrls, // Use all image URLs
       };
 
       const response = await fetch(`http://localhost:8000/property_service/property/edit/${propertyId}`, {

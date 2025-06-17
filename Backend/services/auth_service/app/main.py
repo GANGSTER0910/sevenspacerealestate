@@ -215,6 +215,24 @@ async def create_user(user: User):
         raise he
     except Exception as e:
         raise HTTPException(400, detail=str(e))
+
+@app.put("/user/forgot-password")
+async def forgot_password(user: User_forgot_password, password_reset: str):
+    try:
+        user = user.model_dump(exclude_unset=True)
+        user_dict = db1.get_collection('User').find_one({"email": user['email']})
+        if not user_dict:
+            raise HTTPException(status_code=404, detail="User not found")
+        new_password = get_password_hash(password_reset)
+        # user_dict["password"] = new_password
+        db1.get_collection('User').update_one({"email": user['email']}, {"$set": {"password":new_password}})
+        
+        return JSONResponse(status_code=200, content={"message": "Password updated successfully"})
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
 @app.delete("/user/{user_id}")
 async def delete_user(user_id: str):
     try:
@@ -254,6 +272,7 @@ async def update_user(user_id: str, user: User):
 @app.post("/user/login")
 async def user_login(user: User_login):
     try:
+        print("Login attempt received:", {"email": user.email, "password": "***"})  # Log the incoming request
         user_dict = db1.get_collection('User').find_one({"email": user.email})
         if user_dict:
             if verify_password(user.password, user_dict.get("password", "")):
@@ -280,12 +299,16 @@ async def user_login(user: User_login):
                     path="/"
                 )
 
+                print("Login successful for user:", user.email)  # Log successful login
                 return response
             else:
+                print("Invalid password for user:", user.email)  # Log invalid password
                 raise HTTPException(400, detail="Invalid Password")
         else:
+            print("User not found:", user.email)  # Log user not found
             raise HTTPException(400, detail="User not found")
     except Exception as e:
+        print("Login error:", str(e))  # Log any other errors
         raise HTTPException(400, detail=str(e))
 
 @app.post("/user/logout")

@@ -24,3 +24,6 @@ class admin(BaseModel):
     email:str
     role:Optional[str]="admin"
     password: str
+class User_forgot_password(BaseModel):
+    email: str
+    password: str

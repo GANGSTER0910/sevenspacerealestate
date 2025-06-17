@@ -13,7 +13,7 @@ export interface Property {
   bedrooms?: number;
   bathrooms?: number;
   amenities: string[];
-  images: string[];
+  images?: string[];
   status: PropertyStatus;
   listed_date?: string;
   features?: string[];

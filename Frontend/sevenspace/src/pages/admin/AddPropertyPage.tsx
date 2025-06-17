@@ -25,23 +25,32 @@ const AddPropertyPage = () => {
       // ... inside handleSubmit
 let imageUrls: string[] = [];
 if (selectedFiles.length > 0) {
-  const imageFormData = new FormData();
-  selectedFiles.forEach(file => {
+  for (const file of selectedFiles) {
+    const imageFormData = new FormData();
     imageFormData.append('file', file);
-  });
 
-  const uploadResponse = await fetch('http://localhost:8000/image_service/upload?folder=properties', {
-    method: 'POST',
-    credentials: 'include',
-    body: imageFormData
-  });
+    const uploadResponse = await fetch('http://localhost:8003/upload?folder=properties', {
+      method: 'POST',
+      credentials: 'include',
+      body: imageFormData
+    });
 
-  if (!uploadResponse.ok) {
-    throw new Error('Failed to upload images');
-  }
+    if (!uploadResponse.ok) {
+      throw new Error('Failed to upload images');
+    }
 
+    // const imageData = await uploadResponse.json();
+    // console.log('Image uploaded:', imageData.url);
+    // imageUrls.push(imageData.url);
   const imageData = await uploadResponse.json();
-  imageUrls = imageData.map((img: any) => img.url);
+const urls = imageData
+  .flat() // flatten one level
+  .map((item: any) => item.url)
+  .filter(Boolean);
+
+imageUrls.push(...urls);
+
+  }
 }
       // Create the property data object with image URLs
       const propertyData = {
@@ -53,9 +62,11 @@ if (selectedFiles.length > 0) {
         area_sqft: formData.get('area_sqft') ? parseFloat(formData.get('area_sqft') as string) : undefined,
         bedrooms: formData.get('bedrooms') ? parseInt(formData.get('bedrooms') as string) : undefined,
         bathrooms: formData.get('bathrooms') ? parseInt(formData.get('bathrooms') as string) : undefined,
-        amenities: (formData.get('amenities') as string).split(',').map(a => a.trim()),
+        amenities: typeof formData.get('amenities') === 'string'
+  ? (formData.get('amenities') as string).split(',').map(a => a.trim())
+  : [],
         status: formData.get('status') as string || 'available',
-        images: imageUrls, // Use the uploaded image URLs
+        images: imageUrls, // Use all image URLs
       };
 
       // Create property with the image URLs

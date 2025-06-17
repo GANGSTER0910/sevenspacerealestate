@@ -130,24 +130,59 @@ def decode_Access_token(token: str):
         print(f"Unexpected error in decode_Access_token: {str(e)}")
         raise HTTPException(status_code=401, detail=str(e))
 
+# @app.post("/property")
+# async def add_property(property: Property, files: List[UploadFile] = File(...)):
+#     try:
+#         # Validate property data
+#         property_data = property.dict()
+#         validate_property_data(property_data)
+
+#         # Process images
+#         image_ids = []
+#         for file in files:
+#             if not file.content_type.startswith('image/'):
+#                 raise HTTPException(status_code=400, detail=f"File {file.filename} is not an image")
+#             image_id = fs.put(file.file, filename=file.filename)
+#             image_ids.append(str(image_id))
+
+#         # Normalize title and location
+#         normalized_title = property.title.strip().lower()
+#         normalized_location = property.location.strip()
+
+#         # Check for existing property
+#         existing_property = db1.get_collection('Property').find_one(
+#             {"title": normalized_title, "location": normalized_location},
+#             {"_id": 0}
+#         )
+#         if existing_property:
+#             raise HTTPException(status_code=400, detail="Property already exists")
+
+#         # Prepare property data
+#         property_data["images"] = image_ids
+#         property_data["title"] = normalized_title
+#         property_data["location"] = normalized_location
+#         if not property_data.get("listed_date"):
+#             property_data["listed_date"] = datetime.now().strftime("%Y-%m-%d")
+
+#         # Insert property
+#         result = db1.get_collection('Property').insert_one(property_data)
+#         property_data["_id"] = str(result.inserted_id)
+
+#         return {"message": "Property added successfully", "property": jsonable_encoder(property_data)}
+#     except HTTPException as e:
+#         raise e
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=f"Failed to add property: {str(e)}")
 @app.post("/property")
-async def add_property(property: Property, files: List[UploadFile] = File(...)):
+async def add_property(property: Property):
     try:
         # Validate property data
         property_data = property.dict()
         validate_property_data(property_data)
 
-        # Process images
-        image_ids = []
-        for file in files:
-            if not file.content_type.startswith('image/'):
-                raise HTTPException(status_code=400, detail=f"File {file.filename} is not an image")
-            image_id = fs.put(file.file, filename=file.filename)
-            image_ids.append(str(image_id))
-
         # Normalize title and location
         normalized_title = property.title.strip().lower()
-        normalized_location = property.location.strip()
+        normalized_location = property.location.strip().lower()
 
         # Check for existing property
         existing_property = db1.get_collection('Property').find_one(
@@ -158,21 +193,22 @@ async def add_property(property: Property, files: List[UploadFile] = File(...)):
             raise HTTPException(status_code=400, detail="Property already exists")
 
         # Prepare property data
-        property_data["images"] = image_ids
         property_data["title"] = normalized_title
         property_data["location"] = normalized_location
         if not property_data.get("listed_date"):
             property_data["listed_date"] = datetime.now().strftime("%Y-%m-%d")
 
-        # Insert property
+        # Insert property (images field is already a list of URLs)
         result = db1.get_collection('Property').insert_one(property_data)
         property_data["_id"] = str(result.inserted_id)
 
         return {"message": "Property added successfully", "property": jsonable_encoder(property_data)}
+
     except HTTPException as e:
         raise e
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to add property: {str(e)}")
+
 @app.delete("/property/{property_id}")
 async def delete_property(property_id: str):
     try:

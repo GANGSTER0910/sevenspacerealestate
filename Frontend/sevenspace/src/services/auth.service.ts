@@ -37,32 +37,37 @@ export interface DecodedToken {
 
 export const authService = {
   async login(email: string, password: string): Promise<LoginResponse> {
-  try {
-    const loginResponse = await fetch('http://localhost:8000/auth_service/user/login', {
-      method: 'POST',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
+    try {
+      console.log('Login attempt with:', { email, password: '***' });
+      const loginResponse = await fetch('http://localhost:8000/auth_service/user/login', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({ email, password })
-    });
+      });
 
-    if (!loginResponse.ok) {
-      const errorData = await loginResponse.json();
+      console.log('Login response status:', loginResponse.status);
+      
+      if (!loginResponse.ok) {
+        const errorData = await loginResponse.json();
+        console.error('Login error response:', errorData);
         throw new Error(errorData?.detail || 'Login failed');
-    }
+      }
 
       const data = await loginResponse.json();
+      console.log('Login successful response:', { message: data.message, role: data.role });
       return {
         message: data.message,
         role: data.role
       };
 
-  } catch (error) {
-    console.error('Login error:', error);
-    throw error;
-  }
-},
+    } catch (error) {
+      console.error('Login error:', error);
+      throw error;
+    }
+  },
 
   async register(userData: any) {
     return fetchApi('/auth_service/user', {
@@ -77,21 +82,21 @@ export const authService = {
   },
 
   async checkAuth(): Promise<AuthResponse> {
-  const response = await fetch('http://localhost:8000/auth_service/checkAuthentication', {
-    method: 'POST',
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-    }
-  });
+    const response = await fetch('http://localhost:8000/auth_service/checkAuthentication', {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
 
     const data = await response.json();
-  if (!response.ok) {
+    if (!response.ok) {
       throw new Error(data.detail || 'Authentication check failed');
-  }
+    }
 
-  return data;
-},
+    return data;
+  },
 
   async sendOTP(data: OTPData): Promise<AuthResponse> {
     return fetchApi('/auth_service/generate-otp', {

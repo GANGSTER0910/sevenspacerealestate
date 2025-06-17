@@ -14,7 +14,7 @@ from PIL import Image
 from starlette.middleware.sessions import SessionMiddleware
 import io
 from app.auth import get_current_user, require_role
-from app.middleware import setup_middleware
+# from app.middleware import setup_middleware
 
 
 load_dotenv()
@@ -25,7 +25,7 @@ app = FastAPI(
     version="1.0.0"
 )
 
-setup_middleware(app)
+# setup_middleware(app)
 origins = [
     "http://localhost:5173",
     "http://localhost:8000",
@@ -140,8 +140,6 @@ async def upload_image(
             size=size,
             format=format
         ))
-        if len(responses) == 1:
-            return responses[0]
         return responses
     except HTTPException as e:
         raise e
