@@ -28,11 +28,17 @@ export interface LoginResponse {
 
 export interface AuthResponse {
   message: string;
+  otp?: number;
 }
 
 export interface DecodedToken {
   email: string;
   role: string;
+}
+
+export interface PasswordResetData {
+  email: string;
+  password_reset: string;
 }
 
 export const authService = {
@@ -120,6 +126,27 @@ export const authService = {
     return fetchApi('/auth_service/decode', {
       method: 'POST',
       credentials: 'include'
+    });
+  },
+
+  async requestPasswordReset(email: string): Promise<AuthResponse> {
+    return fetchApi('/auth_service/request-password-reset', {
+      method: 'POST',
+      body: { email }
+    });
+  },
+
+  async verifyResetOTP(email: string, otp: number): Promise<AuthResponse> {
+    return fetchApi('/auth_service/verifyotp', {
+      method: 'POST',
+      body: { email, otp }
+    });
+  },
+
+  async resetPassword(email: string, password_reset: string): Promise<AuthResponse> {
+    return fetchApi('/auth_service/user/forgot-password', {
+      method: 'PUT',
+      body: { email, password_reset }
     });
   },
 }; 

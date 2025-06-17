@@ -193,13 +193,10 @@ async def submit_contact_form(contact: Contact):
                 """.format(name=contact.name)
             )
 
-            logger.info("Creating Brevo API client...")
             api_client = ApiClient(configuration)
             api_instance = TransactionalEmailsApi(api_client)
 
-            logger.info("Sending email...")
             response = api_instance.send_transac_email(email)
-            logger.info("Email sent successfully")
             return {"message": "Contact form submitted and email sent successfully"}
         except ApiException as e:
             logger.error(f"Brevo API error: {str(e)}")
@@ -213,6 +210,58 @@ async def submit_contact_form(contact: Contact):
     except Exception as e:
         logger.error(f"Unexpected error in contact form submission: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+@app.post("/otp")
+async def send_otp(contact: OtpRequest):
+    configuration = Configuration()
+    configuration.api_key['api-key'] = BREVO_KEY
+    email = SendSmtpEmail(
+    to=[{"email": contact.email, "name": contact.name}],
+    sender={"email": "harsh.p4@ahduni.edu.in", "name": "Sevenspace"},
+    subject="Your OTP for Password Reset – Sevenspace",
+    html_content="""
+        <html>
+            <body style="font-family: Arial, sans-serif; background-color: #f9f9f9; padding: 20px;">
+                <table width="100%" style="max-width: 600px; margin: auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.1);">
+                    <tr>
+                        <td style="background-color: #0055a5; padding: 20px; text-align: center;">
+                            <img src="https://i.imgur.com/1ZfH5EN.png" alt="Seven Space Real Estate" width="120" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 30px;">
+                            <h2 style="color: #0055a5; margin-top: 0;">OTP Verification</h2>
+                            <p style="font-size: 16px; color: #333;">
+                                Hello {name},
+                            </p>
+                            <p style="font-size: 16px; color: #333;">
+                                We received a request to reset your password. Please use the following OTP to complete the verification:
+                            </p>
+                            <div style="font-size: 32px; font-weight: bold; letter-spacing: 6px; text-align: center; padding: 20px; background-color: #f0f4f8; border-radius: 8px; margin: 20px 0; color: #0055a5;">
+                                {otp}
+                            </div>
+                            <p style="font-size: 16px; color: #333;">
+                                This OTP is valid for the next 10 minutes. Do not share it with anyone.
+                            </p>
+                            <p style="font-size: 16px; color: #333;">
+                                If you didn’t request this, you can safely ignore this email.
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="background-color: #f1f1f1; text-align: center; padding: 15px; font-size: 14px; color: #666;">
+                            © Seven Space Real Estate – Ahmedabad Realtors Association | NAR India | World Properties
+                        </td>
+                    </tr>
+                </table>
+            </body>
+        </html>
+    """.format(name=contact.name, otp=otp)
+)
+    api_client = ApiClient(configuration)
+    api_instance = TransactionalEmailsApi(api_client)
+
+    response = api_instance.send_transac_email(email)
+    return {"message": "Contact form submitted and email sent successfully"}
 
 @app.get("/contact/messages")
 async def get_contact_messages():

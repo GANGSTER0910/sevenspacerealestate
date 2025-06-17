@@ -7,3 +7,7 @@ class Contact(BaseModel):
     subject: str
     content: str
     created_date: Optional[datetime] = Field(default_factory=datetime.utcnow)
+class OtpRequest(BaseModel):
+    email: str
+    otp: str
+    created_date: Optional[datetime] = Field(default_factory=datetime.utcnow)

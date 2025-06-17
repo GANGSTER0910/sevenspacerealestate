@@ -16,6 +16,8 @@ from starlette.middleware.sessions import SessionMiddleware
 from authlib.integrations.starlette_client import OAuth, OAuthError
 from jwt.exceptions import JWTDecodeError
 import httpx
+import redis
+import random
 app = FastAPI(
     title="Auth service"
 )
@@ -48,6 +50,7 @@ app.add_middleware(SessionMiddleware,
     secret_key = Secret_key,)
 CLIENT_ID = os.getenv('CLIENT_ID')
 CLIENT_SECRET = os.getenv('CLIENT_SECRET')
+password = os.getenv('REDIS_PASSWORD')
 oauth = OAuth()
 oauth.register(
     name='google',
@@ -174,6 +177,14 @@ def getcookie(token:str):
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
 
+r = redis.Redis(
+    host='redis-18614.c212.ap-south-1-1.ec2.redns.redis-cloud.com',
+    port=18614,
+    decode_responses=True,
+    username="default",
+    password=password,
+)
+
 @app.post('/decode')
 async def decode(request: Request):
     try:
@@ -198,6 +209,21 @@ async def check(request: Request):
         return JSONResponse(status_code=200, content={"message": "Authenticated"})
     return JSONResponse(status_code=401, content={"message": "Not Authenticated"})
 
+@app.post("/request-password-reset")
+async def request_password_reset(email: str):
+    user = db1.get_collection('User').find_one({"email": email})
+    if not user:
+        raise HTTPException(status_code=404, detail="Email not found")
+    
+    otp = random.randint(100000, 999999) 
+    # r.setex(f"otp:{email}", 600, otp)  
+    result = r.setex(f"otp:{email}", 600, otp)
+    # print("Redis set result:", result)
+
+    # print(f"[Email] OTP for {email}: {otp}")
+    
+    return JSONResponse(status_code=200, content={"otp":otp, "message": "OTP sent successfully"})
+
 @app.post("/user")
 async def create_user(user: User):
     try:
@@ -215,23 +241,6 @@ async def create_user(user: User):
         raise he
     except Exception as e:
         raise HTTPException(400, detail=str(e))
-
-@app.put("/user/forgot-password")
-async def forgot_password(user: User_forgot_password, password_reset: str):
-    try:
-        user = user.model_dump(exclude_unset=True)
-        user_dict = db1.get_collection('User').find_one({"email": user['email']})
-        if not user_dict:
-            raise HTTPException(status_code=404, detail="User not found")
-        new_password = get_password_hash(password_reset)
-        # user_dict["password"] = new_password
-        db1.get_collection('User').update_one({"email": user['email']}, {"$set": {"password":new_password}})
-        
-        return JSONResponse(status_code=200, content={"message": "Password updated successfully"})
-    except HTTPException as he:
-        raise he
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
 
 @app.delete("/user/{user_id}")
 async def delete_user(user_id: str):
@@ -337,14 +346,42 @@ async def get_all_users():
         raise HTTPException(status_code=400, detail=str(e))
 
 @app.post("/verifyotp")
-async def verify_otp(otp : otp_verify, otp_cookie : str=Cookie(None)):
-    if not otp_cookie:
-        raise HTTPException(status_code=400, detail="Otp not found")
-    elif otp!=otp_cookie:
-        raise HTTPException(status_code=400, detail="Otp is invalid")
-    return {"message": "OTP verified successfully"}
+async def verify_otp(email: str, otp: int):
+    stored_otp = r.get(f"otp:{email}")
+    # print(otp, stored_otp)
+    if not stored_otp:
+        raise HTTPException(status_code=400, detail="Invalid or expired OTP")
+
+    # Check if stored_otp is bytes and decode
+    try:
+        stored_otp_int = int(stored_otp.decode()) if isinstance(stored_otp, bytes) else int(stored_otp)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"OTP retrieval error: {str(e)}")
+
+    if stored_otp_int != otp:
+        raise HTTPException(status_code=400, detail="Invalid OTP")
+
+    r.delete(f"otp:{email}")
+    return JSONResponse(status_code=200, content={"message": "OTP verified successfully"})
 
 
+@app.put("/user/forgot-password")
+async def forgot_password(user: User_forgot_password, password_reset: str):
+    try:
+        user = user.model_dump(exclude_unset=True)
+        user_dict = db1.get_collection('User').find_one({"email": user['email']})
+        if not user_dict:
+            raise HTTPException(status_code=404, detail="User not found")
+        new_password = get_password_hash(password_reset)
+        # user_dict["password"] = new_password
+        db1.get_collection('User').update_one({"email": user['email']}, {"$set": {"password":new_password}})
+        
+        return JSONResponse(status_code=200, content={"message": "Password updated successfully"})
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    
 @app.get('/google/login')
 async def google_login(request: Request):
     redirect_uri = request.url_for('google_auth')  
