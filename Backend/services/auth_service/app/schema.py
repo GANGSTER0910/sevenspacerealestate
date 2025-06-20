@@ -7,7 +7,10 @@ class User(BaseModel):
     email: str
     password: str
     role: Optional[str] = "user"
-    phone: Optional[int] = None
+    phone: str | int | None = None
+    location: Optional[str] = None
+    name : Optional[str] = None
+    bio : Optional[str] = None
 
 class User_login(BaseModel):
     email : str
@@ -27,3 +30,19 @@ class admin(BaseModel):
 class User_forgot_password(BaseModel):
     email: str
     password: str
+
+class User_change_password(BaseModel):
+    email: str
+    old_password: str
+    new_password: str
+
+# Model with all optional fields for partial updates (profile editing)
+class UpdateUser(BaseModel):
+    name: Optional[str] = None
+    email: Optional[str] = None
+    # Accept phone as string or int to avoid validation issues
+    phone: str | int | None = None
+    location: Optional[str] = None
+    bio: Optional[str] = None
+    role: Optional[str] = "user"
+    password: Optional[str] = None

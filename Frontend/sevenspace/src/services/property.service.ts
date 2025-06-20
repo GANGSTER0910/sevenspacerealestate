@@ -6,7 +6,7 @@ import { Property as PropertyType, PropertyType as PropertyTypeEnum, PropertySta
 const mapBackendToFrontendProperty = (prop: any): PropertyType => {
   const area = typeof prop.area_sqft === 'number' ? prop.area_sqft : 0;
   return {
-    _id: String(prop._id),
+    _id: String(prop._id || prop.id),
     title: String(prop.title),
     property_type: prop.property_type as PropertyTypeEnum,
     description: String(prop.description),
@@ -189,6 +189,55 @@ export const propertyService = {
     });
     return response.favorites.map(mapBackendToFrontendProperty);
   },
+  async search(query: string): Promise<PropertyResponse> {
+    const trimmed = query.trim();
+    if (!trimmed) return { count: 0, properties: [] };
+    
+    try {
+      const firstTry = await fetchApi('/property_service/property/search', {
+        method: 'GET',
+        params: { q: trimmed }
+      });
+
+      if (firstTry && Array.isArray(firstTry.properties) && firstTry.properties.length > 0) {
+        return {
+          count: firstTry.count,
+          properties: firstTry.properties.map(mapBackendToFrontendProperty)
+        };
+      }
+
+      // If no results and query has multiple words, try searching last word
+      const tokens = trimmed.split(/\s+/).filter(Boolean);
+      if (tokens.length > 1) {
+        const lastWord = tokens[tokens.length - 1];
+        const secondTry = await fetchApi('/property_service/property/search', {
+          method: 'GET',
+          params: { q: lastWord }
+        });
+
+        if (secondTry && Array.isArray(secondTry.properties) && secondTry.properties.length > 0) {
+          return {
+            count: secondTry.count,
+            properties: secondTry.properties.map(mapBackendToFrontendProperty)
+          };
+        }
+      }
+
+      // Final fallback: get all and client-side filter
+      const all = await propertyService.getAll();
+      const lower = trimmed.toLowerCase();
+      const filtered = all.properties.filter(p =>
+        p.title.toLowerCase().includes(lower) ||
+        p.location.toLowerCase().includes(lower) ||
+        p.property_type.toLowerCase().includes(lower)
+      );
+      
+      return { count: filtered.length, properties: filtered };
+    } catch (error) {
+      console.error('Search error:', error);
+      return { count: 0, properties: [] };
+    }
+  }
 };
 
 // React Query hooks

@@ -130,23 +130,37 @@ export const authService = {
   },
 
   async requestPasswordReset(email: string): Promise<AuthResponse> {
-    return fetchApi('/auth_service/request-password-reset', {
+    return fetchApi(`/auth_service/request-password-reset?email=${encodeURIComponent(email)}`, {
       method: 'POST',
-      body: { email }
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+      }
     });
   },
 
   async verifyResetOTP(email: string, otp: number): Promise<AuthResponse> {
-    return fetchApi('/auth_service/verifyotp', {
+    return fetchApi(`/auth_service/verifyotp?email=${encodeURIComponent(email)}&otp=${otp}`, {
       method: 'POST',
-      body: { email, otp }
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+      }
     });
   },
 
   async resetPassword(email: string, password_reset: string): Promise<AuthResponse> {
-    return fetchApi('/auth_service/user/forgot-password', {
+    return fetchApi('/auth_service/user/password-reset', {
       method: 'PUT',
-      body: { email, password_reset }
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: {
+        email,
+        password: password_reset,
+        password_reset: password_reset
+      }
     });
   },
 }; 

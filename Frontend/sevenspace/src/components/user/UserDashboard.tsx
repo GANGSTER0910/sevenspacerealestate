@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -35,6 +35,8 @@ const UserDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState("profile");
   const [favorites, setFavorites] = useState([]);
   const [isLoadingFavorites, setIsLoadingFavorites] = useState(false);
+  const [myProperties, setMyProperties] = useState<Property[]>([]);
+  const [isLoadingMyProperties, setIsLoadingMyProperties] = useState(false);
   
   // Add form state
   const [profileForm, setProfileForm] = useState({
@@ -63,10 +65,54 @@ const UserDashboard: React.FC = () => {
   const [isProfileSaving, setIsProfileSaving] = useState(false);
   const [isPasswordSaving, setIsPasswordSaving] = useState(false);
   const [isNotificationsSaving, setIsNotificationsSaving] = useState(false);
+  const [isProfileLoading, setIsProfileLoading] = useState(false);
+
+  const navigate = useNavigate();
+
+  // Fetch current user profile details
+  const fetchProfileDetails = async () => {
+    try {
+      setIsProfileLoading(true);
+      const response = await fetch(`${API_URL}/auth_service/user/me`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to load profile');
+      }
+
+      const data = await response.json();
+      const userDetails = data.user;
+      setProfileForm(prev => ({
+        ...prev,
+        name: userDetails.name || '',
+        email: userDetails.email || '',
+        phone: userDetails.phone ? String(userDetails.phone) : '',
+        location: userDetails.location || '',
+        bio: userDetails.bio || '',
+      }));
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+      toast.error('Failed to load profile');
+    } finally {
+      setIsProfileLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (activeTab === "favorites") {
       fetchFavorites();
+    }
+    if (activeTab === "properties") {
+      fetchMyProperties();
+    }
+    if (activeTab === "profile") {
+      fetchProfileDetails();
     }
   }, [activeTab]);
 
@@ -100,6 +146,34 @@ const fetchFavorites = async () => {
     setIsLoadingFavorites(false);
   }
 };
+
+// Fetch properties listed by the current user
+const fetchMyProperties = async () => {
+  try {
+    setIsLoadingMyProperties(true);
+    const response = await fetch(`${API_URL}/property_service/property/my`, {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch your properties');
+    }
+
+    const data = await response.json();
+    setMyProperties(data.properties);
+  } catch (error) {
+    console.error('Error fetching user properties:', error);
+    toast.error('Failed to load your properties');
+  } finally {
+    setIsLoadingMyProperties(false);
+  }
+};
+
 const handleRemoveFavorite = async (propertyId: string) => {
     try {
       const response = await fetch(`${API_URL}/property_service/property/${propertyId}/favorite`, {
@@ -123,9 +197,9 @@ const handleRemoveFavorite = async (propertyId: string) => {
   };
 
   const formatPrice = (price: number) => {
-    return price.toLocaleString('en-US', {
+    return price.toLocaleString('en-IN', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'INR',
       maximumFractionDigits: 0
     });
   };
@@ -159,45 +233,110 @@ const handleRemoveFavorite = async (propertyId: string) => {
   };
   
   // Handle profile save
-  const handleProfileSave = (e: React.FormEvent) => {
+  const handleProfileSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsProfileSaving(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      toast.success("Profile Updated", {
-        description: "Your profile has been updated successfully."
+
+    try {
+      // Prepare payload, omitting phone if blank to satisfy backend validation
+      const payload: Record<string, any> = {
+        name: profileForm.name,
+        email: profileForm.email,
+        location: profileForm.location,
+        bio: profileForm.bio,
+      };
+
+      if (profileForm.phone.trim() !== '') {
+        const phoneNumber = Number(profileForm.phone);
+        if (!isNaN(phoneNumber)) {
+          payload.phone = phoneNumber;
+        }
+      }
+
+      const response = await fetch(`${API_URL}/auth_service/user/update`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify(payload),
       });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || 'Failed to update profile');
+      }
+
+      const result = await response.json();
+
+      // Update form with returned values
+      if (result.user) {
+        const u = result.user;
+        setProfileForm({
+          name: u.name || '',
+          email: u.email || '',
+          phone: u.phone ? String(u.phone) : '',
+          location: u.location || '',
+          bio: u.bio || '',
+        });
+      }
+
+      toast.success('Profile Updated', {
+        description: 'Your profile has been updated successfully.',
+      });
+    } catch (error: any) {
+      console.error('Error updating profile:', error);
+      toast.error('Update Failed', {
+        description: error?.message || 'Failed to update profile',
+      });
+    } finally {
       setIsProfileSaving(false);
-    }, 1000);
+    }
   };
   
   // Handle password update
-  const handlePasswordUpdate = (e: React.FormEvent) => {
+  const handlePasswordUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Validation
-    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      toast.error("Password Error", {
-        description: "New password and confirmation do not match."
-      });
+
+    if (!passwordForm.currentPassword || !passwordForm.newPassword) {
+      toast.error('Password Error', { description: 'All password fields are required.' });
       return;
     }
-    
+
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      toast.error('Password Error', { description: 'New password and confirmation do not match.' });
+      return;
+    }
+
     setIsPasswordSaving(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      toast.success("Password Updated", {
-        description: "Your password has been changed successfully."
+
+    try {
+      const response = await fetch(`${API_URL}/auth_service/user/change-password`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: user.email,
+          old_password: passwordForm.currentPassword,
+          new_password: passwordForm.newPassword,
+        }),
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to change password');
+      }
+
+      toast.success('Password Updated', { description: 'Your password has been changed successfully.' });
+      setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+    } catch (error: any) {
+      toast.error('Update Failed', { description: error.message || 'Failed to change password' });
+    } finally {
       setIsPasswordSaving(false);
-      setPasswordForm({
-        currentPassword: "",
-        newPassword: "",
-        confirmPassword: ""
-      });
-    }, 1000);
+    }
   };
   
   // Handle notification preferences save
@@ -357,9 +496,9 @@ const handleRemoveFavorite = async (propertyId: string) => {
                     <Button 
                       type="submit" 
                       className="bg-realestate-primary hover:bg-realestate-secondary"
-                      disabled={isProfileSaving}
+                      disabled={(isProfileSaving || isProfileLoading) ? true : false}
                     >
-                      {isProfileSaving ? "Saving..." : "Save Profile"}
+                      {(isProfileSaving || isProfileLoading) ? "Loading..." : "Save Profile"}
                     </Button>
                   </div>
                 </form>
@@ -369,17 +508,54 @@ const handleRemoveFavorite = async (propertyId: string) => {
 
           {activeTab === "properties" && (
             <Card>
-              <CardHeader>
-                <CardTitle>My Properties</CardTitle>
-                <CardDescription>Properties you've listed or saved</CardDescription>
+              <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between">
+                <div>
+                  <CardTitle>My Properties</CardTitle>
+                  <CardDescription>Your listed properties</CardDescription>
+                </div>
+                <Button
+                  className="mt-4 md:mt-0 bg-realestate-primary hover:bg-realestate-secondary"
+                  onClick={() => navigate('/user/add-property')}
+                >
+                  List a Property
+                </Button>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-8">
-                  <p className="text-gray-500 mb-4">You haven't listed any properties yet.</p>
-                  <Button className="bg-realestate-primary hover:bg-realestate-secondary">
-                    List a Property
-                  </Button>
-                </div>
+                {isLoadingMyProperties ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+                  </div>
+                ) : myProperties.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500 mb-4">You haven't listed any properties yet.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {myProperties.map((property) => (
+                      <Card key={property._id}>
+                        <CardContent className="p-0">
+                          <div className="relative">
+                            <img
+                              src={property.images[0] || 'https://via.placeholder.com/400x300'}
+                              alt={property.title}
+                              className="h-48 w-full object-cover"
+                            />
+                          </div>
+                          <div className="p-4">
+                            <h4 className="font-semibold capitalize">{property.title}</h4>
+                            <p className="text-sm text-gray-500 capitalize">{property.location}</p>
+                            <p className="font-bold mt-2">{formatPrice(property.price)}</p>
+                            <div className="mt-4 flex space-x-2">
+                              <Link to={`/property/${property._id}`}>
+                                <Button variant="outline" size="sm">View Details</Button>
+                              </Link>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}

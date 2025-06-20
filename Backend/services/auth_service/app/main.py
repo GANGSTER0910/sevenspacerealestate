@@ -175,6 +175,7 @@ def getcookie(token:str):
     response.get_cookie("session")
 
 def verify_password(plain_password, hashed_password):
+    # pwd_context.
     return pwd_context.verify(plain_password, hashed_password)
 
 r = redis.Redis(
@@ -242,7 +243,60 @@ async def create_user(user: User):
     except Exception as e:
         raise HTTPException(400, detail=str(e))
 
-@app.delete("/user/{user_id}")
+@app.put("/user/password-reset")
+async def forgot_password(data: User_forgot_password):
+    try:
+        user_record = db1.get_collection('User').find_one({"email": data.email})
+        if not user_record:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        hashed_password = get_password_hash(data.password)
+        result = db1.get_collection('User').update_one(
+            {"email": data.email},
+            {"$set": {"password": hashed_password}}
+        )
+
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        return JSONResponse(status_code=200, content={"message": "Password updated successfully"})
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.put("/user/change-password")
+async def change_password(data: User_change_password, request: Request):
+    try:
+        session = request.cookies.get('session')
+        if not session:
+            raise HTTPException(status_code=401, detail="No session token found")
+        
+        token_data = decode_Access_token(session)
+        user_email = token_data.get("email")
+        
+        user_record = db1.get_collection('User').find_one({"email": user_email})
+        if not user_record:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        if not verify_password(data.old_password, user_record.get("password", "")):
+            raise HTTPException(status_code=400, detail="Old password is incorrect")
+
+        new_hashed_password = get_password_hash(data.new_password)
+        result = db1.get_collection('User').update_one(
+            {"email": user_email},
+            {"$set": {"password": new_hashed_password}}
+        )
+
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        return JSONResponse(status_code=200, content={"message": "Password changed successfully"})
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+@app.delete("/user/id/{user_id}")
 async def delete_user(user_id: str):
     try:
         if not ObjectId.is_valid(user_id):
@@ -257,7 +311,7 @@ async def delete_user(user_id: str):
         raise he
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
-@app.put("/user/{user_id}")
+@app.put("/user/id/{user_id}")
 async def update_user(user_id: str, user: User):
     try:
         if not ObjectId.is_valid(user_id):
@@ -364,24 +418,6 @@ async def verify_otp(email: str, otp: int):
     r.delete(f"otp:{email}")
     return JSONResponse(status_code=200, content={"message": "OTP verified successfully"})
 
-
-@app.put("/user/forgot-password")
-async def forgot_password(user: User_forgot_password, password_reset: str):
-    try:
-        user = user.model_dump(exclude_unset=True)
-        user_dict = db1.get_collection('User').find_one({"email": user['email']})
-        if not user_dict:
-            raise HTTPException(status_code=404, detail="User not found")
-        new_password = get_password_hash(password_reset)
-        # user_dict["password"] = new_password
-        db1.get_collection('User').update_one({"email": user['email']}, {"$set": {"password":new_password}})
-        
-        return JSONResponse(status_code=200, content={"message": "Password updated successfully"})
-    except HTTPException as he:
-        raise he
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    
 @app.get('/google/login')
 async def google_login(request: Request):
     redirect_uri = request.url_for('google_auth')  
@@ -415,6 +451,49 @@ async def google_auth(request: Request):
 
     except OAuthError as error:
         raise HTTPException(status_code=400, detail=f"OAuth error: {error.error}")
+@app.put("/user/update")
+async def update_profile(data: UpdateUser, request: Request):
+    """Update currently authenticated user's profile with partial fields."""
+    try:
+        # Verify session token
+        session = request.cookies.get('session')
+        if not session:
+            raise HTTPException(status_code=401, detail="No session token found")
+
+        token_data = decode_Access_token(session)
+        user_email = token_data.get("email")
+
+        update_fields = {k: v for k, v in data.model_dump(exclude_unset=True).items() if v is not None}
+        if not update_fields:
+            raise HTTPException(status_code=400, detail="No valid fields to update")
+
+        # Do not allow email update to conflicting value
+        if "email" in update_fields and update_fields["email"] != user_email:
+            # Check duplicate email
+            if db1.get_collection('User').find_one({"email": update_fields["email"]}):
+                raise HTTPException(status_code=400, detail="Email already in use")
+
+        # Hash password if provided in update
+        if "password" in update_fields and update_fields["password"] is not None:
+            update_fields["password"] = get_password_hash(update_fields["password"])
+
+        result = db1.get_collection('User').update_one(
+            {"email": user_email},
+            {"$set": update_fields}
+        )
+
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        updated_user = db1.get_collection('User').find_one({"email": update_fields.get("email", user_email)})
+        updated_user["_id"] = str(updated_user["_id"])
+
+        return JSONResponse(status_code=200, content={"message": "Profile updated successfully", "user": updated_user})
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
 @app.get("/health")
 async def health_check():
     """
@@ -428,6 +507,31 @@ async def health_check():
         logger.error(f"Health check failed: {str(e)}")
         # Return 200 even if database check fails, as the service itself is running
         return {"status": "healthy", "service": SERVICE_NAME, "database": "unavailable"}
+
+@app.get("/user/me")
+async def get_my_profile(request: Request):
+    """Return details of the currently authenticated user (from session)."""
+    try:
+        session = request.cookies.get('session')
+        if not session:
+            raise HTTPException(status_code=401, detail="No session token found")
+
+        token_data = decode_Access_token(session)
+        user_email = token_data.get("email")
+
+        user_record = db1.get_collection('User').find_one({"email": user_email})
+        if not user_record:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        # Exclude sensitive fields
+        user_record.pop("password", None)
+        user_record["_id"] = str(user_record["_id"])
+
+        return JSONResponse(status_code=200, content={"user": user_record})
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 if __name__ == "__main__":
     import uvicorn

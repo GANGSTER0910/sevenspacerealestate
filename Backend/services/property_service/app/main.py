@@ -50,12 +50,44 @@ client1 = MongoClient(link)
 db1 = client1['SSRealEstate']
 fs = gridfs.GridFS(db1)
 
+def create_index():
+    collection = db1.get_collection('Property')
+    collection.create_index([("title", 1), ("location", 1)], name="title_location_index")
+    collection.create_index([("owner_email", 1)], name="owner_email_index")
+    collection.create_index([("listed_date", -1)], name="listed_date_index")
+    collection.create_index([("status", 1)], name="status_index")
+    collection.create_index([("property_type", 1)], name="property_type_index")
+    collection.create_index([("price", 1)], name="price_index")
+    collection.create_index([("location", 1), ("price", 1)], name="location_price_index")
+    collection.create_index([("bedrooms", 1)], name="bedrooms_index")
+    collection.create_index([("bathrooms", 1)], name="bathrooms_index")
+    collection.create_index([("bedrooms", 1), ("price", 1)], name="bedrooms_price_index")
+    collection.create_index([("location", 1), ("area_sqft", 1)], name="location_area_index")
+    collection.create_index([("status", 1), ("listed_date", -1)], name="available_recent_index")
+    collection.create_index([("amenities", 1)], name="amenities_index")
+
+    collection.create_index([
+        ("title", "text"),
+        ("description", "text"),
+        ("location", "text")
+    ], name="combined_text_index")
+
+    print("Indexes created successfully.")
+
+def drop_all_indexes_on_shutdown():
+    collection = db1.get_collection('Property')
+    for index in collection.index_information():
+        if index != "_id_":
+            collection.drop_index(index)
+    print("All indexes (except _id_) dropped successfully.")
+
 app.add_middleware(SessionMiddleware, secret_key=Secret_key)
 
 @app.on_event("startup")
 async def startup_event():
     """Register service on startup"""
     try:
+        create_index()
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 "http://api_gateway:8000/register",
@@ -70,6 +102,7 @@ async def startup_event():
 async def shutdown_event():
     """Unregister service on shutdown"""
     try:
+        drop_all_indexes_on_shutdown()
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 "http://api_gateway:8000/unregister",
@@ -130,61 +163,25 @@ def decode_Access_token(token: str):
         print(f"Unexpected error in decode_Access_token: {str(e)}")
         raise HTTPException(status_code=401, detail=str(e))
 
-# @app.post("/property")
-# async def add_property(property: Property, files: List[UploadFile] = File(...)):
-#     try:
-#         # Validate property data
-#         property_data = property.dict()
-#         validate_property_data(property_data)
-
-#         # Process images
-#         image_ids = []
-#         for file in files:
-#             if not file.content_type.startswith('image/'):
-#                 raise HTTPException(status_code=400, detail=f"File {file.filename} is not an image")
-#             image_id = fs.put(file.file, filename=file.filename)
-#             image_ids.append(str(image_id))
-
-#         # Normalize title and location
-#         normalized_title = property.title.strip().lower()
-#         normalized_location = property.location.strip()
-
-#         # Check for existing property
-#         existing_property = db1.get_collection('Property').find_one(
-#             {"title": normalized_title, "location": normalized_location},
-#             {"_id": 0}
-#         )
-#         if existing_property:
-#             raise HTTPException(status_code=400, detail="Property already exists")
-
-#         # Prepare property data
-#         property_data["images"] = image_ids
-#         property_data["title"] = normalized_title
-#         property_data["location"] = normalized_location
-#         if not property_data.get("listed_date"):
-#             property_data["listed_date"] = datetime.now().strftime("%Y-%m-%d")
-
-#         # Insert property
-#         result = db1.get_collection('Property').insert_one(property_data)
-#         property_data["_id"] = str(result.inserted_id)
-
-#         return {"message": "Property added successfully", "property": jsonable_encoder(property_data)}
-#     except HTTPException as e:
-#         raise e
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=f"Failed to add property: {str(e)}")
 @app.post("/property")
-async def add_property(property: Property):
+async def add_property(property: Property, request: Request):
     try:
-        # Validate property data
         property_data = property.dict()
         validate_property_data(property_data)
 
-        # Normalize title and location
+        # Determine the owner from the session cookie (if present)
+        session = request.cookies.get('session')
+        if session:
+            try:
+                user_data = decode_Access_token(session)
+                property_data["owner_email"] = user_data.get("email")
+            except Exception as e:
+                # Token invalid or expired – ignore owner attachment but log
+                print(f"Warning: could not decode token in add_property: {e}")
+
         normalized_title = property.title.strip().lower()
         normalized_location = property.location.strip().lower()
 
-        # Check for existing property
         existing_property = db1.get_collection('Property').find_one(
             {"title": normalized_title, "location": normalized_location},
             {"_id": 0}
@@ -192,13 +189,11 @@ async def add_property(property: Property):
         if existing_property:
             raise HTTPException(status_code=400, detail="Property already exists")
 
-        # Prepare property data
         property_data["title"] = normalized_title
         property_data["location"] = normalized_location
         if not property_data.get("listed_date"):
             property_data["listed_date"] = datetime.now().strftime("%Y-%m-%d")
 
-        # Insert property (images field is already a list of URLs)
         result = db1.get_collection('Property').insert_one(property_data)
         property_data["_id"] = str(result.inserted_id)
 
@@ -209,24 +204,40 @@ async def add_property(property: Property):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to add property: {str(e)}")
 
+@app.get("/property/search")
+async def search_properties(q: str = Query(..., description="Search query")):
+    try:
+        collection = db1.get_collection('Property')
+
+        # Text search with score
+        cursor = collection.find(
+            {"$text": {"$search": q}, "status": "available"},
+            {"score": {"$meta": "textScore"}}  # ✅ Projection goes here
+        ).sort([("score", {"$meta": "textScore"})])  # ✅ Sort by score
+
+        properties = []
+        for prop in cursor:
+            prop["_id"] = str(prop["_id"])
+            properties.append(prop)
+
+        return {"count": len(properties), "properties": properties}
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.delete("/property/{property_id}")
 async def delete_property(property_id: str):
     try:
-        # Check if property exists
         existing_property = db1.get_collection('Property').find_one({"_id": ObjectId(property_id)})
         if not existing_property:
             raise HTTPException(status_code=404, detail="Property not found")
 
-        # # Delete property images from GridFS
-        # for image_id in existing_property.get("images", []):
-        #     fs.delete(ObjectId(image_id))
-
-        # Delete property from the collection
         db1.get_collection('Property').delete_one({"_id": ObjectId(property_id)})
 
         return {"message": "Property deleted successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to delete property: {str(e)}")
+
 @app.get("/property/category")
 async def get_property_by_category(category: str, status: str = "available"):
     query = {"property_type": category}
@@ -418,6 +429,32 @@ async def get_favorites(request: Request):
         print(f"Error in get_favorites: {e}")
         return {"favorites": []}
 
+@app.get("/property/my")
+async def get_my_properties(request: Request):
+    try:
+        # Authenticate user via session cookie
+        session = request.cookies.get('session')
+        if not session:
+            raise HTTPException(status_code=401, detail="Not authenticated")
+
+        user_data = decode_Access_token(session)
+        user_email = user_data.get("email")
+        if not user_email:
+            raise HTTPException(status_code=400, detail="Invalid token")
+
+        # Fetch properties by owner_email
+        cursor = db1.get_collection('Property').find({"owner_email": user_email})
+        my_properties = []
+        for prop in cursor:
+            prop["_id"] = str(prop["_id"])
+            my_properties.append(prop)
+
+        return {"count": len(my_properties), "properties": jsonable_encoder(my_properties)}
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/property/{property_id}")
 async def get_property(property_id: str):
     try:
@@ -428,6 +465,7 @@ async def get_property(property_id: str):
         return property_data
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+    
 @app.get("/health")
 async def health_check():
     """

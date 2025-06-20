@@ -17,6 +17,7 @@ import RegisterPage from "./pages/RegisterPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import UserDashboardPage from "./pages/UserDashboardPage";
 import FavoritesPage from "./pages/FavoritesPage";
+import UserAddPropertyPage from "./pages/user/AddPropertyPage";
 
 // Admin pages
 import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
@@ -86,6 +87,14 @@ const App = () => (
                       <FavoritesPage />
                     </ProtectedRoute>
                   } 
+                />
+                <Route 
+                  path="/user/add-property"
+                  element={
+                    <ProtectedRoute requiredRole="user">
+                      <UserAddPropertyPage />
+                    </ProtectedRoute>
+                  }
                 />
                 <Route 
                   path="/admin/dashboard" 

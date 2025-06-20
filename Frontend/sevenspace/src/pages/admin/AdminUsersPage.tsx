@@ -152,7 +152,7 @@ const AdminUsersPage: React.FC = () => {
     if (!selectedUser) return;
 
     try {
-      const response = await fetch(`http://localhost:8000/auth_service/user/${selectedUser._id}`, {
+      const response = await fetch(`http://localhost:8000/auth_service/user/id/${selectedUser._id}`, {
         method: 'PUT',
         credentials: 'include',
         headers: {
@@ -192,7 +192,7 @@ const AdminUsersPage: React.FC = () => {
 
   const handleDelete = async (userId: string) => {
     try {
-      const response = await fetch(`http://localhost:8000/auth_service/user/${userId}`, {
+      const response = await fetch(`http://localhost:8000/auth_service/user/id/${userId}`, {
         method: 'DELETE',
         credentials: 'include',
         headers: {

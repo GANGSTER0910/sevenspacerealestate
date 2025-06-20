@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -9,16 +8,14 @@ import {
   CommandItem,
   CommandList
 } from "@/components/ui/command";
-import { getAllProperties } from "@/services/propertyService";
+import { propertyService } from "@/services/property.service";
 import { Property } from "@/types/property";
 import { 
-  Search, 
   Home, 
   Building2, 
   Users, 
   Info, 
   HelpCircle, 
-  MessageCircle, 
   Phone, 
   User 
 } from "lucide-react";
@@ -41,18 +38,21 @@ const CommandK: React.FC<CommandKProps> = ({ open, onOpenChange }) => {
 
   // Handle property search when term changes
   useEffect(() => {
-    if (searchTerm) {
-      const properties = getAllProperties();
-      const filtered = properties.filter(
-        property =>
-          property.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          property.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          property.type.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      setSearchResults(filtered.slice(0, 5)); // Limit to 5 results
-    } else {
-      setSearchResults([]);
-    }
+    const trimmed = searchTerm.trim();
+    const handler = setTimeout(async () => {
+      if (!trimmed) {
+        setSearchResults([]);
+        return;
+      }
+      try {
+        const results = await propertyService.search(trimmed);
+        setSearchResults(results.properties?.slice(0, 5) || []);
+      } catch (error) {
+        console.error('Search error in CommandK:', error);
+        setSearchResults([]);
+      }
+    }, 300);
+    return () => clearTimeout(handler);
   }, [searchTerm]);
 
   // Navigate and close dialog
@@ -63,9 +63,9 @@ const CommandK: React.FC<CommandKProps> = ({ open, onOpenChange }) => {
 
   // Format price for display
   const formatPrice = (price: number) => {
-    return price.toLocaleString("en-US", {
+    return price.toLocaleString("en-IN", {
       style: "currency",
-      currency: "USD",
+      currency: "INR",
       maximumFractionDigits: 0,
     });
   };
@@ -82,13 +82,12 @@ const CommandK: React.FC<CommandKProps> = ({ open, onOpenChange }) => {
       />
       <CommandList className="max-h-[400px] overflow-auto">
         <CommandEmpty>No results found.</CommandEmpty>
-        
         {searchResults.length > 0 && (
           <CommandGroup heading="Properties">
             {searchResults.map((property) => (
               <CommandItem
-                key={property.id}
-                onSelect={() => runCommand(() => navigate(`/property/${property.id}`))}
+                key={property._id}
+                onSelect={() => runCommand(() => navigate(`/property/${property._id}`))}
                 className="flex items-center"
               >
                 <Building2 className="mr-2 h-4 w-4" />

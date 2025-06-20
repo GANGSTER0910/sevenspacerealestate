@@ -17,3 +17,4 @@ class Property(BaseModel):
     images: Optional[List[str]] = []  # List of image URLs
     listed_date: Optional[str] = None  # Date when the property was listed
     status: Optional[str] = "available"  # Default status is "available"
+    owner_email: Optional[str] = None  # Email of the user who listed the property
