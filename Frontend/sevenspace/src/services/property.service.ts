@@ -22,6 +22,7 @@ const mapBackendToFrontendProperty = (prop: any): PropertyType => {
     features: Array.isArray(prop.features) ? prop.features : [],
   };
 };
+const url = process.env.url || 'http://localhost:8000';
 
 // Helper function to map frontend property to backend property type
 const mapFrontendToBackendProperty = (prop: Omit<PropertyType, '_id'>) => {

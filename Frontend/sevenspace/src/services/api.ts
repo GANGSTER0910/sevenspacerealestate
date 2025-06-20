@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000' || 'https://sevenspacerealestate.onrender.com';
+const url = process.env.url || 'http://localhost:8000';
 
 interface FetchOptions extends RequestInit {
   body?: any;
@@ -7,7 +7,7 @@ interface FetchOptions extends RequestInit {
 export const fetchApi = async (endpoint: string, options: FetchOptions = {}) => {
   const { body, ...fetchOptions } = options;
 
-  const response = await fetch(`${API_URL}${endpoint}`, {
+  const response = await fetch(`${url}${endpoint}`, {
     ...fetchOptions,
     credentials: 'include', 
     headers: {

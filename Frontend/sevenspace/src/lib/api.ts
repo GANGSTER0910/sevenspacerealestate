@@ -1,5 +1,6 @@
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+import { url } from "inspector";
 
+const url1 = process.env.url || 'http://localhost:8000';
 interface FetchOptions extends RequestInit {
   params?: Record<string, string>;
 }
@@ -14,7 +15,7 @@ async function fetchApi(endpoint: string, options: FetchOptions = {}) {
   };
 
   // Build URL with query parameters
-  let url = `${BASE_URL}${endpoint}`;
+  let url = `${url1}${endpoint}`;
   if (params) {
     const searchParams = new URLSearchParams(params);
     url += `?${searchParams.toString()}`;

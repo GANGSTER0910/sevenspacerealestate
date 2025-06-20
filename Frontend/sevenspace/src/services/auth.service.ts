@@ -1,4 +1,5 @@
 import { fetchApi } from './api';
+const url = process.env.url || 'http://localhost:8000';
 
 export interface LoginCredentials {
   email: string;
@@ -45,7 +46,7 @@ export const authService = {
   async login(email: string, password: string): Promise<LoginResponse> {
     try {
       console.log('Login attempt with:', { email, password: '***' });
-      const loginResponse = await fetch('http://localhost:8000/auth_service/user/login', {
+      const loginResponse = await fetch(`${url}/auth_service/user/login`, {
         method: 'POST',
         credentials: 'include',
         headers: {
@@ -88,7 +89,7 @@ export const authService = {
   },
 
   async checkAuth(): Promise<AuthResponse> {
-    const response = await fetch('http://localhost:8000/auth_service/checkAuthentication', {
+    const response = await fetch(`${url}/auth_service/checkAuthentication`, {
       method: 'POST',
       credentials: 'include',
       headers: {

@@ -20,7 +20,7 @@ const formSchema = z.object({
   message: "Passwords don't match",
   path: ["confirmPassword"],
 });
-
+const url = process.env.url || 'http://localhost:8000';
 type FormValues = z.infer<typeof formSchema>;
 
 const RegisterForm: React.FC = () => {
@@ -41,7 +41,7 @@ const RegisterForm: React.FC = () => {
   const onSubmit = async (values: FormValues) => {
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:8000/auth_service/user', {
+      const response = await fetch(`${url}/auth_service/user`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

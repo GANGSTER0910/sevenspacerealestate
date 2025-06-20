@@ -51,6 +51,7 @@ app.add_middleware(SessionMiddleware,
 CLIENT_ID = os.getenv('CLIENT_ID')
 CLIENT_SECRET = os.getenv('CLIENT_SECRET')
 password = os.getenv('REDIS_PASSWORD')
+url = os.getenv('url')
 oauth = OAuth()
 oauth.register(
     name='google',
@@ -68,7 +69,7 @@ async def startup_event():
     try:
         async with httpx.AsyncClient() as client:
             response = await client.post(
-                "http://api_gateway:8000/register",
+                f"{url}/register",
                 params={"service_name": SERVICE_NAME, "service_url": SERVICE_URL}
             )
             if response.status_code == 200:
@@ -82,7 +83,7 @@ async def shutdown_event():
     try:
         async with httpx.AsyncClient() as client:
             response = await client.post(
-                "http://api_gateway:8000/unregister",
+                f"{url}/unregister",
                 params={"service_name": SERVICE_NAME}
             )
             if response.status_code == 200:

@@ -47,6 +47,7 @@ cloudinary.config(
     api_key=os.getenv('CLOUDINARY_API_KEY'),
     api_secret=os.getenv('CLOUDINARY_API_SECRET')
 )
+url = os.getenv('url')
 app.add_middleware(SessionMiddleware, secret_key=Secret_key)
 SERVICE_NAME = "image_service"
 SERVICE_URL = f"http://image_service:8003"
@@ -57,7 +58,7 @@ async def startup_event():
     try:
         async with httpx.AsyncClient() as client:
             response = await client.post(
-                "http://api_gateway:8000/register",
+                f"{url}/register",
                 params={"service_name": SERVICE_NAME, "service_url": SERVICE_URL}
             )
             if response.status_code == 200:
@@ -71,7 +72,7 @@ async def shutdown_event():
     try:
         async with httpx.AsyncClient() as client:
             response = await client.post(
-                "http://api_gateway:8000/unregister",
+                f"{url}/unregister",
                 params={"service_name": SERVICE_NAME}
             )
             if response.status_code == 200:

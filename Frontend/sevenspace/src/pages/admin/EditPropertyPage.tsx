@@ -9,6 +9,8 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { Property } from '@/types/property';
+const url = process.env.url || 'http://localhost:8000';
+const image_url = process.env.image_url || 'http://localhost:8003/';
 
 const EditPropertyPage = () => {
   const { propertyId } = useParams<{ propertyId: string }>();
@@ -26,7 +28,7 @@ const EditPropertyPage = () => {
   const fetchProperty = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch(`http://localhost:8000/property_service/property/${propertyId}`, {
+      const response = await fetch(`${url}/property_service/property/${propertyId}`, {
         method: 'GET',
         credentials: 'include',
       });
@@ -67,7 +69,7 @@ const EditPropertyPage = () => {
           const imageFormData = new FormData();
           imageFormData.append('file', file);
 
-          const uploadResponse = await fetch('http://localhost:8003/upload?folder=properties', {
+          const uploadResponse = await fetch(`${image_url}/upload?folder=properties`, {
             method: 'POST',
             credentials: 'include',
             body: imageFormData
@@ -101,7 +103,7 @@ imageUrls.push(...urls);
         images: imageUrls, // Use all image URLs
       };
 
-      const response = await fetch(`http://localhost:8000/property_service/property/edit/${propertyId}`, {
+      const response = await fetch(`${url}/property_service/property/edit/${propertyId}`, {
         method: 'PUT',
         credentials: 'include',
         headers: {

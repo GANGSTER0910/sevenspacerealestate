@@ -12,7 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from '@/contexts/AuthContext';
 
-const API_URL =  'http://localhost:8000' ;
+const url = process.env.url || 'http://localhost:8000';
 
 const PropertyDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -30,7 +30,7 @@ const PropertyDetailPage: React.FC = () => {
   
   const checkFavoriteStatus = async (propertyId: string) => {
     try {
-      const response = await fetch(`${API_URL}/property_service/property/${propertyId}/favorite`, {
+      const response = await fetch(`${url}/property_service/property/${propertyId}/favorite`, {
         method: 'GET',
         credentials: 'include',
         headers: {
@@ -135,8 +135,8 @@ const PropertyDetailPage: React.FC = () => {
       
       if (isFavorited) {
         // Remove from favorites
-        console.log('Attempting to remove from favorites:', `${API_URL}/property_service/property/${id}/favorite`);
-        const response = await fetch(`${API_URL}/property_service/property/${id}/favorite`, {
+        console.log('Attempting to remove from favorites:', `${url}/property_service/property/${id}/favorite`);
+        const response = await fetch(`${url}/property_service/property/${id}/favorite`, {
           method: 'DELETE',
           credentials: 'include',
         });
@@ -150,8 +150,8 @@ const PropertyDetailPage: React.FC = () => {
         toast.success("Property removed from favorites");
       } else {
         // Add to favorites
-        console.log('Attempting to add to favorites:', `${API_URL}/property/${id}/favorite`);
-        const response = await fetch(`${API_URL}/property_service/property/${id}/favorite`, {
+        console.log('Attempting to add to favorites:', `${url}/property/${id}/favorite`);
+        const response = await fetch(`${url}/property_service/property/${id}/favorite`, {
           method: 'POST',
           credentials: 'include',
           headers: {

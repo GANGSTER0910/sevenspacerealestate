@@ -31,6 +31,8 @@ interface ContactMessage {
   content: string;
   created_date: string;
 }
+const url = process.env.url || 'http://localhost:8000';
+const image_url = process.env.image_url || 'http://localhost:8003/';
 
 const AdminInquiriesPage: React.FC = () => {
   const [messages, setMessages] = useState<ContactMessage[]>([]);
@@ -44,7 +46,7 @@ const AdminInquiriesPage: React.FC = () => {
 
   const fetchMessages = async () => {
     try {
-      const response = await fetch("http://localhost:8000/notification_service/contact/messages");
+      const response = await fetch(`${url}/notification_service/contact/messages`);
       if (!response.ok) {
         throw new Error("Failed to fetch messages");
       }

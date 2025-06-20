@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Mail, Phone, MapPin } from "lucide-react";
+const url = process.env.url || 'http://localhost:8000';
 
 interface ContactFormData {
   name: string;
@@ -37,7 +38,7 @@ const ContactPage: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch("http://localhost:8000/notification_service/contact", {
+      const response = await fetch(`${url}/notification_service/contact`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

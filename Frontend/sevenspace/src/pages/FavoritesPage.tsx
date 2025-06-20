@@ -22,6 +22,7 @@ interface Property {
   listed_date: string;
   status: string;
 }
+const url = process.env.url || 'http://localhost:8000';
 
 const FavoritesPage = () => {
   const [favorites, setFavorites] = useState<Property[]>([]);
@@ -39,7 +40,7 @@ const FavoritesPage = () => {
           return;
         }
 
-        const response = await fetch("http://localhost:8000/property_service/property/favorites", {
+        const response = await fetch(`${url}/property_service/property/favorites`, {
           credentials: 'include',
         });
 
@@ -62,7 +63,7 @@ const FavoritesPage = () => {
 
   const handleRemoveFavorite = async (propertyId: string) => {
     try {
-      const response = await fetch("http://localhost:8000/property_service/property/${propertyId}/favorite", {
+      const response = await fetch(`${url}/property_service/property/${propertyId}/favorite`, {
         method: 'DELETE',
         credentials: 'include',
       });

@@ -26,7 +26,7 @@ app = FastAPI(
     version="1.0.0"
 )
 load_dotenv()
-
+url = os.getenv('url')
 # Service registration
 SERVICE_NAME = "notification_service"
 SERVICE_URL = f"http://notification_service:8004"
@@ -59,29 +59,12 @@ app.add_middleware(SessionMiddleware, secret_key=Secret_key)
 async def register_with_gateway():
     """Register service with API Gateway"""
     try:
-        logger.info("Starting registration process...")
-        logger.info(f"Service Name: {SERVICE_NAME}")
-        logger.info(f"Service URL: {SERVICE_URL}")
-        logger.info(f"API Gateway URL: http://api_gateway:8000/register")
-        
         async with httpx.AsyncClient() as client:
-            logger.info("Sending registration request...")
             response = await client.post(
-                "http://api_gateway:8000/register",
+                f"{url}/register",
                 params={"service_name": SERVICE_NAME, "service_url": SERVICE_URL}
             )
-            logger.info(f"Registration response status: {response.status_code}")
-            logger.info(f"Registration response body: {response.text}")
             response.raise_for_status()
-            logger.info(f"Service {SERVICE_NAME} registered successfully. Response status: {response.status_code}")
-    except httpx.RequestError as exc:
-        logger.error(f"Network error during registration: {exc}")
-        logger.error(f"Request URL: {exc.request.url}")
-        logger.error(f"Request method: {exc.request.method}")
-        logger.error(f"Request headers: {exc.request.headers}")
-    except httpx.HTTPStatusError as exc:
-        logger.error(f"HTTP error during registration: {exc.response.status_code}")
-        logger.error(f"Response body: {exc.response.text}")
     except Exception as e:
         logger.error(f"Unexpected error during registration: {str(e)}")
 
@@ -98,7 +81,7 @@ async def shutdown_event():
         logger.info("Shutdown event triggered")
         async with httpx.AsyncClient() as client:
             response = await client.post(
-                "http://api_gateway:8000/unregister",
+                f"{url}/unregister",
                 params={"service_name": SERVICE_NAME}
             )
             if response.status_code == 200:

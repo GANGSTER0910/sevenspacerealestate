@@ -28,7 +28,7 @@ interface UserProfile {
   role: string;
   name?: string;
 }
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000' || 'https://sevenspacerealestate.onrender.com';
+const url = process.env.url || 'http://localhost:8000';
 
 const UserDashboard: React.FC = () => {
   const { user } = useAuth();
@@ -73,7 +73,7 @@ const UserDashboard: React.FC = () => {
   const fetchProfileDetails = async () => {
     try {
       setIsProfileLoading(true);
-      const response = await fetch(`${API_URL}/auth_service/user/me`, {
+      const response = await fetch(`${url}/auth_service/user/me`, {
         method: 'GET',
         credentials: 'include',
         headers: {
@@ -121,7 +121,7 @@ const fetchFavorites = async () => {
     setIsLoadingFavorites(true);
     
     // First, get the list of favorite IDs
-    const response = await fetch(`${API_URL}/property_service/property/favorites`, {
+    const response = await fetch(`${url}/property_service/property/favorites`, {
       method: 'GET',
       credentials: 'include',
       headers: {
@@ -151,7 +151,7 @@ const fetchFavorites = async () => {
 const fetchMyProperties = async () => {
   try {
     setIsLoadingMyProperties(true);
-    const response = await fetch(`${API_URL}/property_service/property/my`, {
+    const response = await fetch(`${url}/property_service/property/my`, {
       method: 'GET',
       credentials: 'include',
       headers: {
@@ -176,7 +176,7 @@ const fetchMyProperties = async () => {
 
 const handleRemoveFavorite = async (propertyId: string) => {
     try {
-      const response = await fetch(`${API_URL}/property_service/property/${propertyId}/favorite`, {
+      const response = await fetch(`${url}/property_service/property/${propertyId}/favorite`, {
         method: 'DELETE',
         credentials: 'include',
         headers: {
@@ -253,7 +253,7 @@ const handleRemoveFavorite = async (propertyId: string) => {
         }
       }
 
-      const response = await fetch(`${API_URL}/auth_service/user/update`, {
+      const response = await fetch(`${url}/auth_service/user/update`, {
         method: 'PUT',
         credentials: 'include',
         headers: {
@@ -312,7 +312,7 @@ const handleRemoveFavorite = async (propertyId: string) => {
     setIsPasswordSaving(true);
 
     try {
-      const response = await fetch(`${API_URL}/auth_service/user/change-password`, {
+      const response = await fetch(`${url}/auth_service/user/change-password`, {
         method: 'PUT',
         credentials: 'include',
         headers: {

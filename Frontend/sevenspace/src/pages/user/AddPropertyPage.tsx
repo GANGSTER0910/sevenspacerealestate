@@ -8,6 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
+const url = process.env.url || 'http://localhost:8000';
+const image_url = process.env.image_url || 'http://localhost:8003/';
 
 const AddPropertyPage = () => {
   const navigate = useNavigate();
@@ -29,7 +31,7 @@ const AddPropertyPage = () => {
           const imageFormData = new FormData();
           imageFormData.append('file', file);
 
-          const uploadResponse = await fetch('http://localhost:8003/upload?folder=properties', {
+          const uploadResponse = await fetch(`${url}/upload?folder=properties`, {
             method: 'POST',
             credentials: 'include',
             body: imageFormData,
@@ -66,7 +68,7 @@ const AddPropertyPage = () => {
       };
 
       // Send property to backend
-      const response = await fetch('http://localhost:8000/property_service/property', {
+      const response = await fetch(`${url}/property_service/property`, {
         method: 'POST',
         credentials: 'include',
         headers: {

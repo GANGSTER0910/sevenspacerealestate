@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import AdminLayout from "@/components/admin/AdminLayout";
-
+const url = process.env.url || 'http://localhost:8000';
+const image_url = process.env.image_url || 'http://localhost:8003/';
 const AddPropertyPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -29,7 +30,7 @@ if (selectedFiles.length > 0) {
     const imageFormData = new FormData();
     imageFormData.append('file', file);
 
-    const uploadResponse = await fetch('http://localhost:8003/upload?folder=properties', {
+    const uploadResponse = await fetch(`${image_url}/upload?folder=properties`, {
       method: 'POST',
       credentials: 'include',
       body: imageFormData
@@ -70,7 +71,7 @@ imageUrls.push(...urls);
       };
 
       // Create property with the image URLs
-      const response = await fetch('http://localhost:8000/property_service/property', {
+      const response = await fetch(`${url}/property_service/property`, {
         method: 'POST',
         credentials: 'include',
         headers: {
