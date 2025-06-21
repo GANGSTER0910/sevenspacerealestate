@@ -27,7 +27,7 @@ load_dotenv()
 
 # Service registration
 SERVICE_NAME = "property_service"
-SERVICE_URL = f"http://property_service:8002"
+SERVICE_URL = os.getenv('PROPERTY_SERVICE_URL')
 
 origins = [
     "http://localhost:5173",

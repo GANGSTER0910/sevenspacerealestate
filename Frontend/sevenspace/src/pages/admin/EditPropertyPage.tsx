@@ -9,8 +9,8 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { Property } from '@/types/property';
-const url = process.env.url || 'http://localhost:8000';
-const image_url = process.env.image_url || 'http://localhost:8003/';
+const url = import.meta.env.VITE_url || 'http://localhost:8000';
+const image_url = import.meta.env.VITE_image_url || 'http://localhost:8003';
 
 const EditPropertyPage = () => {
   const { propertyId } = useParams<{ propertyId: string }>();

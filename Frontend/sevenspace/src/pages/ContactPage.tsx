@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Mail, Phone, MapPin } from "lucide-react";
-const url = process.env.url || 'http://localhost:8000';
+const url = import.meta.env.VITE_url || 'http://localhost:8000';
 
 interface ContactFormData {
   name: string;

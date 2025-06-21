@@ -12,7 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from '@/contexts/AuthContext';
 
-const url = process.env.url || 'http://localhost:8000';
+const url = import.meta.env.VITE_url || 'http://localhost:8000';
 
 const PropertyDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();

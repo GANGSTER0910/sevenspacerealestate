@@ -1,5 +1,5 @@
 import { fetchApi } from './api';
-const url = process.env.url || 'http://localhost:8000';
+const url = import.meta.env.VITE_url || 'http://localhost:8000';
 
 export interface LoginCredentials {
   email: string;

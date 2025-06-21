@@ -23,7 +23,7 @@ app = FastAPI(
 )
 load_dotenv()
 SERVICE_NAME = "auth_service"
-SERVICE_URL = f"http://auth_service:8001"
+SERVICE_URL = os.getenv("AUTH_SERVICE_URL")
 origins = [
     "http://localhost:5173",
     "http://localhost:8000",

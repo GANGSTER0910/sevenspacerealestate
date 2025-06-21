@@ -22,7 +22,7 @@ interface Property {
   listed_date: string;
   status: string;
 }
-const url = process.env.url || 'http://localhost:8000';
+const url = import.meta.env.VITE_url || 'http://localhost:8000';
 
 const FavoritesPage = () => {
   const [favorites, setFavorites] = useState<Property[]>([]);

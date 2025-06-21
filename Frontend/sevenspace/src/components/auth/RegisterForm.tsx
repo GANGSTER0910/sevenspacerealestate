@@ -20,7 +20,7 @@ const formSchema = z.object({
   message: "Passwords don't match",
   path: ["confirmPassword"],
 });
-const url = process.env.url || 'http://localhost:8000';
+const url = import.meta.env.VITE_url || 'http://localhost:8000';
 type FormValues = z.infer<typeof formSchema>;
 
 const RegisterForm: React.FC = () => {

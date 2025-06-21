@@ -81,12 +81,9 @@ class ServiceRegistry:
                         self.unregister_service(service_name)
             await asyncio.sleep(self.health_check_interval)
 
-# Create service registry instance
 service_registry = ServiceRegistry()
 
-# Service discovery endpoints
 def setup_service_discovery(app: FastAPI):
-    # Start periodic health checks
     @app.on_event("startup")
     async def start_health_checks():
         asyncio.create_task(service_registry.start_periodic_health_checks())

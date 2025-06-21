@@ -29,7 +29,7 @@ load_dotenv()
 url = os.getenv('url')
 # Service registration
 SERVICE_NAME = "notification_service"
-SERVICE_URL = f"http://notification_service:8004"
+SERVICE_URL = os.getenv('NOTIFICATION_SERVICE_URL')
 
 # Email validation regex
 EMAIL_REGEX = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')

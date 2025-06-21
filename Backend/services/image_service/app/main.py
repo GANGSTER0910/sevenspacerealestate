@@ -50,7 +50,7 @@ cloudinary.config(
 url = os.getenv('url')
 app.add_middleware(SessionMiddleware, secret_key=Secret_key)
 SERVICE_NAME = "image_service"
-SERVICE_URL = f"http://image_service:8003"
+SERVICE_URL = os.getenv('IMAGE_SERVICE_URL')
 
 @app.on_event("startup")
 async def startup_event():

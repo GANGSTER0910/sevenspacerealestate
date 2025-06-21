@@ -31,14 +31,14 @@ const CommandK: React.FC<CommandKProps> = ({ open, onOpenChange }) => {
   const [searchResults, setSearchResults] = useState<Property[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Initial mounting check to prevent hydration issues
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  // Handle property search when term changes
   useEffect(() => {
     const trimmed = searchTerm.trim();
+    if( trimmed.length < 7) return
+    // console.log("Search term:", trimmed);
     const handler = setTimeout(async () => {
       if (!trimmed) {
         setSearchResults([]);
@@ -46,12 +46,14 @@ const CommandK: React.FC<CommandKProps> = ({ open, onOpenChange }) => {
       }
       try {
         const results = await propertyService.search(trimmed);
+        console.log("Search results:", results.properties[0]);
         setSearchResults(results.properties?.slice(0, 5) || []);
+        console.log("Search results set:", results.properties?.slice(0, 5) || []);
       } catch (error) {
         console.error('Search error in CommandK:', error);
         setSearchResults([]);
       }
-    }, 300);
+    }, 1000);
     return () => clearTimeout(handler);
   }, [searchTerm]);
 
@@ -61,14 +63,8 @@ const CommandK: React.FC<CommandKProps> = ({ open, onOpenChange }) => {
     command();
   };
 
-  // Format price for display
-  const formatPrice = (price: number) => {
-    return price.toLocaleString("en-IN", {
-      style: "currency",
-      currency: "INR",
-      maximumFractionDigits: 0,
-    });
-  };
+  const formatPrice = (price: number) =>
+  new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(price);
 
   if (!isMounted) {
     return null;
@@ -81,26 +77,34 @@ const CommandK: React.FC<CommandKProps> = ({ open, onOpenChange }) => {
         onValueChange={setSearchTerm}
       />
       <CommandList className="max-h-[400px] overflow-auto">
-        <CommandEmpty>No results found.</CommandEmpty>
-        {searchResults.length > 0 && (
-          <CommandGroup heading="Properties">
-            {searchResults.map((property) => (
-              <CommandItem
-                key={property._id}
-                onSelect={() => runCommand(() => navigate(`/property/${property._id}`))}
-                className="flex items-center"
-              >
-                <Building2 className="mr-2 h-4 w-4" />
-                <div className="flex flex-col">
-                  <span>{property.title}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {property.location} | {formatPrice(property.price)}
-                  </span>
-                </div>
-              </CommandItem>
-            ))}
-          </CommandGroup>
-        )}
+  {searchTerm.trim() && searchResults.length === 0 ? (
+    <CommandEmpty>No results found.</CommandEmpty>
+  ) : (
+    <>
+      {searchResults.length > 0 && (
+        <CommandGroup heading="Properties" forceMount>
+          {searchResults.map((property) => (
+            <CommandItem
+              key={property._id}
+              value={`${property.title} ${property.location}`} // make it searchable
+              onSelect={() =>
+                runCommand(() => navigate(`/property/${property._id}`))
+              }
+              className="flex items-center"
+            >
+              <Building2 className="mr-2 h-4 w-4" />
+              <div className="flex flex-col">
+                <span>{property.title}</span>
+                <span className="text-xs text-muted-foreground">
+                  {property.location || "Unknown"} | {formatPrice(property.price || 0)}
+                </span>
+              </div>
+            </CommandItem>
+          ))}
+        </CommandGroup>
+      )}
+    </>
+  )}
 
         <CommandGroup heading="Pages">
           <CommandItem onSelect={() => runCommand(() => navigate("/"))}>

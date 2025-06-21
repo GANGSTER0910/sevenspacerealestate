@@ -2,7 +2,6 @@ import fetchApi from '@/lib/api';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Property as PropertyType, PropertyType as PropertyTypeEnum, PropertyStatus } from '@/types/property';
 
-// Helper function to map backend property to frontend property type
 const mapBackendToFrontendProperty = (prop: any): PropertyType => {
   const area = typeof prop.area_sqft === 'number' ? prop.area_sqft : 0;
   return {
@@ -12,7 +11,7 @@ const mapBackendToFrontendProperty = (prop: any): PropertyType => {
     description: String(prop.description),
     price: Number(prop.price),
     location: String(prop.location),
-    area_sqft: parseFloat(prop.area_sqft), // Ensure area is a number with 2 decimal places
+    area_sqft: parseFloat(prop.area_sqft), 
     bedrooms: Number(prop.bedrooms || 0),
     bathrooms: Number(prop.bathrooms || 0),
     amenities: Array.isArray(prop.amenities) ? prop.amenities : [],
@@ -22,9 +21,8 @@ const mapBackendToFrontendProperty = (prop: any): PropertyType => {
     features: Array.isArray(prop.features) ? prop.features : [],
   };
 };
-const url = process.env.url || 'http://localhost:8000';
+const url = import.meta.env.VITE_url || 'http://localhost:8000';
 
-// Helper function to map frontend property to backend property type
 const mapFrontendToBackendProperty = (prop: Omit<PropertyType, '_id'>) => {
   const area_sqft = typeof prop.area_sqft === 'number' ? prop.area_sqft : 0;
   return {
@@ -50,13 +48,11 @@ export interface PropertyFilters {
 export const propertyService = {
   async getAll(filters?: PropertyFilters): Promise<PropertyResponse> {
     try {
-      // Check if we need properties for the homepage (limit 8, sorted by listed_date)
       if (filters?.limit === 8 && filters?.sortBy === 'listed_date') {
         const response = await fetchApi('/property_service/property/home', {
           method: 'GET',
         });
         console.log("Response from /home:", response); // Debug log
-        // Ensure response is valid and has properties array before mapping
         if (!response || !Array.isArray(response.properties)) {
             console.error("Invalid response format for home properties:", response);
             return { count: 0, properties: [] };
@@ -65,7 +61,6 @@ export const propertyService = {
         return { count: response.count || 0, properties };
       }
 
-      // Otherwise, fetch all properties with category/status filters for the property page
       if (filters?.category && filters.category !== 'all') {
         const response = await fetchApi('/property_service/property/category', {
           method: 'GET',
@@ -75,7 +70,6 @@ export const propertyService = {
           }
         });
         console.log("Response from /category:", response); // Debug log
-        // Ensure response is valid and has properties array before mapping
         if (!response || !Array.isArray(response.properties)) {
             console.error("Invalid response format for category filter:", response);
             return { count: 0, properties: [] };
