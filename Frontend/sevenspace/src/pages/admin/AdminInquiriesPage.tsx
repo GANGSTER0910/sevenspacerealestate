@@ -31,8 +31,7 @@ interface ContactMessage {
   content: string;
   created_date: string;
 }
-const url = import.meta.env.VITE_url || 'http://localhost:8000';
-const image_url = import.meta.env.VITE_image_url || 'http://localhost:8003';
+const url = import.meta.env.VITE_NOTIFICATION_URL || 'http://localhost:8000';
 
 const AdminInquiriesPage: React.FC = () => {
   const [messages, setMessages] = useState<ContactMessage[]>([]);
@@ -46,7 +45,7 @@ const AdminInquiriesPage: React.FC = () => {
 
   const fetchMessages = async () => {
     try {
-      const response = await fetch(`${url}/notification_service/contact/messages`);
+      const response = await fetch(`${url}/contact/messages`);
       if (!response.ok) {
         throw new Error("Failed to fetch messages");
       }

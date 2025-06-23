@@ -30,15 +30,15 @@ const PropertyForm: React.FC<PropertyFormProps> = ({
   isLoading,
 }) => {
   const [title, setTitle] = useState(initialData?.title || "");
-  const [type, setType] = useState<PropertyType>(initialData?.type || "apartment");
+  const [type, setType] = useState<PropertyType>(initialData?.property_type || "apartment");
   const [description, setDescription] = useState(initialData?.description || "");
   const [price, setPrice] = useState(initialData?.price.toString() || "");
   const [location, setLocation] = useState(initialData?.location || "");
-  const [area, setArea] = useState(initialData?.area.toString() || "");
+  const [area, setArea] = useState(initialData?.area_sqft.toString() || "");
   const [bedrooms, setBedrooms] = useState(initialData?.bedrooms.toString() || "");
   const [bathrooms, setBathrooms] = useState(initialData?.bathrooms.toString() || "");
   const [status, setStatus] = useState<PropertyStatus>(initialData?.status || "available");
-  const [featured, setFeatured] = useState(initialData?.featured || false);
+  const [featured, setFeatured] = useState(initialData?.features || false);
   
   // For amenities with checkbox selection
   const [amenities, setAmenities] = useState<string[]>(initialData?.amenities || []);
@@ -65,18 +65,18 @@ const PropertyForm: React.FC<PropertyFormProps> = ({
     
     const propertyData: Omit<Property, "id"> = {
       title,
-      type,
+      property_type,
       description,
       price: parseFloat(price),
       location,
-      area: parseFloat(area),
+      area_sqft: parseFloat(area),
       bedrooms: parseInt(bedrooms),
       bathrooms: parseInt(bathrooms),
       amenities,
       images,
       status,
-      listedDate: initialData?.listedDate || new Date().toISOString().split('T')[0],
-      featured,
+      listed_date: initialData?.listed_date || new Date().toISOString().split('T')[0],
+      features: featured ? ["featured"] : [],
     };
     
     onSubmit(propertyData);

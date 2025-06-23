@@ -1,5 +1,5 @@
 import { fetchApi } from './api';
-const url = import.meta.env.VITE_url || 'http://localhost:8000';
+const url = import.meta.env.VITE_AUTH_URL || 'http://localhost:8000/auth_service';
 
 export interface LoginCredentials {
   email: string;
@@ -46,7 +46,7 @@ export const authService = {
   async login(email: string, password: string): Promise<LoginResponse> {
     try {
       console.log('Login attempt with:', { email, password: '***' });
-      const loginResponse = await fetch(`${url}/auth_service/user/login`, {
+      const loginResponse = await fetch(`${url}/user/login`, {
         method: 'POST',
         credentials: 'include',
         headers: {
@@ -77,7 +77,7 @@ export const authService = {
   },
 
   async register(userData: any) {
-    return fetchApi('/auth_service/user', {
+    return fetchApi('/user', {
       method: 'POST',
       body: userData
     });
@@ -89,7 +89,7 @@ export const authService = {
   },
 
   async checkAuth(): Promise<AuthResponse> {
-    const response = await fetch(`${url}/auth_service/checkAuthentication`, {
+    const response = await fetch(`${url}/checkAuthentication`, {
       method: 'POST',
       credentials: 'include',
       headers: {
@@ -106,14 +106,14 @@ export const authService = {
   },
 
   async sendOTP(data: OTPData): Promise<AuthResponse> {
-    return fetchApi('/auth_service/generate-otp', {
+    return fetchApi('/generate-otp', {
       method: 'POST',
       body: data
     });
   },
 
   async verifyOTP(data: OTPVerifyData): Promise<AuthResponse> {
-    return fetchApi('/auth_service/verifyotp', {
+    return fetchApi('/verifyotp', {
       method: 'POST',
       body: data
     });
@@ -124,14 +124,14 @@ export const authService = {
   },
 
   async decodeToken(): Promise<DecodedToken> {
-    return fetchApi('/auth_service/decode', {
+    return fetchApi('/decode', {
       method: 'POST',
       credentials: 'include'
     });
   },
 
   async requestPasswordReset(email: string): Promise<AuthResponse> {
-    return fetchApi(`/auth_service/request-password-reset?email=${encodeURIComponent(email)}`, {
+    return fetchApi(`/request-password-reset?email=${encodeURIComponent(email)}`, {
       method: 'POST',
       credentials: 'include',
       headers: {
@@ -141,7 +141,7 @@ export const authService = {
   },
 
   async verifyResetOTP(email: string, otp: number): Promise<AuthResponse> {
-    return fetchApi(`/auth_service/verifyotp?email=${encodeURIComponent(email)}&otp=${otp}`, {
+    return fetchApi(`/verifyotp?email=${encodeURIComponent(email)}&otp=${otp}`, {
       method: 'POST',
       credentials: 'include',
       headers: {
@@ -151,7 +151,7 @@ export const authService = {
   },
 
   async resetPassword(email: string, password_reset: string): Promise<AuthResponse> {
-    return fetchApi('/auth_service/user/password-reset', {
+    return fetchApi('/user/password-reset', {
       method: 'PUT',
       credentials: 'include',
       headers: {

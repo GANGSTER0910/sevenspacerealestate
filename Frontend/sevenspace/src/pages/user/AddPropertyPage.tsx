@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
-const url = import.meta.env.VITE_url || 'http://localhost:8000';
+const url = import.meta.env.VITE_PROPERTY_URL || 'http://localhost:8000/property_service';
 const image_url = import.meta.env.VITE_image_url || 'http://localhost:8003';
 
 const AddPropertyPage = () => {
@@ -68,7 +68,7 @@ const AddPropertyPage = () => {
       };
 
       // Send property to backend
-      const response = await fetch(`${url}/property_service/property`, {
+      const response = await fetch(`${url}/property`, {
         method: 'POST',
         credentials: 'include',
         headers: {

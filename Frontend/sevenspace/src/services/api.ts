@@ -1,4 +1,4 @@
-const url = import.meta.env.VITE_url || 'http://localhost:8000';
+const url = import.meta.env.VITE_AUTH_URL || 'http://localhost:8000/auth_service';
 
 interface FetchOptions extends RequestInit {
   body?: any;

@@ -12,7 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from '@/contexts/AuthContext';
 
-const url = import.meta.env.VITE_url || 'http://localhost:8000';
+const url = import.meta.env.VITE_PROPERTY_URL || 'http://localhost:8000/property_service';
 
 const PropertyDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -30,7 +30,7 @@ const PropertyDetailPage: React.FC = () => {
   
   const checkFavoriteStatus = async (propertyId: string) => {
     try {
-      const response = await fetch(`${url}/property_service/property/${propertyId}/favorite`, {
+      const response = await fetch(`${url}/property/${propertyId}/favorite`, {
         method: 'GET',
         credentials: 'include',
         headers: {

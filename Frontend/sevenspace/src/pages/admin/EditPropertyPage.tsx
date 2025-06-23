@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { Property } from '@/types/property';
-const url = import.meta.env.VITE_url || 'http://localhost:8000';
+const url = import.meta.env.VITE_PROPERTY_URL || 'http://localhost:8000/property_service';
 const image_url = import.meta.env.VITE_image_url || 'http://localhost:8003';
 
 const EditPropertyPage = () => {
@@ -28,7 +28,7 @@ const EditPropertyPage = () => {
   const fetchProperty = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch(`${url}/property_service/property/${propertyId}`, {
+      const response = await fetch(`${url}/property/${propertyId}`, {
         method: 'GET',
         credentials: 'include',
       });
@@ -103,7 +103,7 @@ imageUrls.push(...urls);
         images: imageUrls, // Use all image URLs
       };
 
-      const response = await fetch(`${url}/property_service/property/edit/${propertyId}`, {
+      const response = await fetch(`${url}/property/edit/${propertyId}`, {
         method: 'PUT',
         credentials: 'include',
         headers: {

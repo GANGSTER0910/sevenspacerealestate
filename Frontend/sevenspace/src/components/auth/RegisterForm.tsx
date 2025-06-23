@@ -21,6 +21,7 @@ const formSchema = z.object({
   path: ["confirmPassword"],
 });
 const url = import.meta.env.VITE_url || 'http://localhost:8000';
+const authurl = import.meta.env.VITE_AUTH_URL || 'http://localhost:8000/auth_service';
 type FormValues = z.infer<typeof formSchema>;
 
 const RegisterForm: React.FC = () => {
@@ -41,7 +42,7 @@ const RegisterForm: React.FC = () => {
   const onSubmit = async (values: FormValues) => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${url}/auth_service/user`, {
+      const response = await fetch(`${authurl}/user`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

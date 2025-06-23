@@ -22,7 +22,7 @@ interface Property {
   listed_date: string;
   status: string;
 }
-const url = import.meta.env.VITE_url || 'http://localhost:8000';
+const url = import.meta.env.VITE_PROPERTY_URL || 'http://localhost:8000/property_service';
 
 const FavoritesPage = () => {
   const [favorites, setFavorites] = useState<Property[]>([]);
@@ -40,7 +40,7 @@ const FavoritesPage = () => {
           return;
         }
 
-        const response = await fetch(`${url}/property_service/property/favorites`, {
+        const response = await fetch(`${url}/property/favorites`, {
           credentials: 'include',
         });
 
@@ -63,7 +63,7 @@ const FavoritesPage = () => {
 
   const handleRemoveFavorite = async (propertyId: string) => {
     try {
-      const response = await fetch(`${url}/property_service/property/${propertyId}/favorite`, {
+      const response = await fetch(`${url}/property/${propertyId}/favorite`, {
         method: 'DELETE',
         credentials: 'include',
       });

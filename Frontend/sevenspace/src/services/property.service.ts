@@ -21,7 +21,7 @@ const mapBackendToFrontendProperty = (prop: any): PropertyType => {
     features: Array.isArray(prop.features) ? prop.features : [],
   };
 };
-const url = import.meta.env.VITE_url || 'http://localhost:8000';
+const url = import.meta.env.VITE_PROPERTY_URL || 'http://localhost:8000';
 
 const mapFrontendToBackendProperty = (prop: Omit<PropertyType, '_id'>) => {
   const area_sqft = typeof prop.area_sqft === 'number' ? prop.area_sqft : 0;
@@ -49,7 +49,7 @@ export const propertyService = {
   async getAll(filters?: PropertyFilters): Promise<PropertyResponse> {
     try {
       if (filters?.limit === 8 && filters?.sortBy === 'listed_date') {
-        const response = await fetchApi('/property_service/property/home', {
+        const response = await fetchApi('/property/home', {
           method: 'GET',
         });
         console.log("Response from /home:", response); // Debug log
@@ -62,7 +62,7 @@ export const propertyService = {
       }
 
       if (filters?.category && filters.category !== 'all') {
-        const response = await fetchApi('/property_service/property/category', {
+        const response = await fetchApi('/property/category', {
           method: 'GET',
           params: {
             category: filters.category,
@@ -78,7 +78,7 @@ export const propertyService = {
         return { count: response.count || 0, properties };
       }
       
-      const response = await fetchApi('/property_service/property/all', {
+      const response = await fetchApi('/property/all', {
         method: 'GET',
         params: {
           status: filters?.status || 'available',
@@ -117,7 +117,7 @@ export const propertyService = {
       formData.append('files', file);
     });
     
-    const response = await fetchApi('/property_service/property', {
+    const response = await fetchApi('/property', {
       method: 'POST',
       headers: {
         'Content-Type': undefined
@@ -132,14 +132,14 @@ export const propertyService = {
   },
 
   async getById(id: string): Promise<PropertyType> {
-    const response = await fetchApi(`/property_service/property/${id}`, {
+    const response = await fetchApi(`/property/${id}`, {
       method: 'GET'
     });
     return mapBackendToFrontendProperty(response);
   },
 
   async update(id: string, property: Partial<PropertyType>): Promise<PropertyType> {
-    const response = await fetchApi(`/property_service/property/${id}`, {
+    const response = await fetchApi(`/property/${id}`, {
       method: 'PUT',
       body: JSON.stringify({
         title: property.title,
@@ -161,25 +161,25 @@ export const propertyService = {
   },
 
   async delete(id: string): Promise<void> {
-    return fetchApi(`/property_service/property/${id}`, {
+    return fetchApi(`/property/${id}`, {
       method: 'DELETE'
     });
   },
 
   async addToFavorites(propertyId: string): Promise<{ message: string }> {
-    return fetchApi(`/property_service/property/${propertyId}/favorite`, {
+    return fetchApi(`/property/${propertyId}/favorite`, {
       method: 'POST'
     });
   },
 
   async removeFromFavorites(propertyId: string): Promise<{ message: string }> {
-    return fetchApi(`/property_service/property/${propertyId}/favorite`, {
+    return fetchApi(`/property/${propertyId}/favorite`, {
       method: 'DELETE'
     });
   },
 
   async getFavorites(): Promise<PropertyType[]> {
-    const response = await fetchApi('/property_service/property/favorites', {
+    const response = await fetchApi('/property/favorites', {
       method: 'GET'
     });
     return response.favorites.map(mapBackendToFrontendProperty);
@@ -189,7 +189,7 @@ export const propertyService = {
     if (!trimmed) return { count: 0, properties: [] };
     
     try {
-      const firstTry = await fetchApi('/property_service/property/search', {
+      const firstTry = await fetchApi('/property/search', {
         method: 'GET',
         params: { q: trimmed }
       });
@@ -205,7 +205,7 @@ export const propertyService = {
       const tokens = trimmed.split(/\s+/).filter(Boolean);
       if (tokens.length > 1) {
         const lastWord = tokens[tokens.length - 1];
-        const secondTry = await fetchApi('/property_service/property/search', {
+        const secondTry = await fetchApi('/property/search', {
           method: 'GET',
           params: { q: lastWord }
         });

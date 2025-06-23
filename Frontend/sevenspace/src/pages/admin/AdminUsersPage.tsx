@@ -54,7 +54,7 @@ interface UserFormData {
   name?: string;
   phone?: number;
 }
-
+const authurl = import.meta.env.VITE_AUTH_URL || 'http://localhost:8000/auth_service';
 const AdminUsersPage: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -79,7 +79,7 @@ const AdminUsersPage: React.FC = () => {
   const fetchUsers = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch('http://localhost:8000/auth_service/user/all', {
+      const response = await fetch(`${authurl}/user/all`, {
         method: 'POST',
         credentials: 'include',
         headers: {
@@ -111,7 +111,7 @@ const AdminUsersPage: React.FC = () => {
 
   const handleAddUser = async () => {
     try {
-      const response = await fetch('http://localhost:8000/auth_service/user', {
+      const response = await fetch(`${authurl}/user`, {
         method: 'POST',
         credentials: 'include',
         headers: {
@@ -152,7 +152,7 @@ const AdminUsersPage: React.FC = () => {
     if (!selectedUser) return;
 
     try {
-      const response = await fetch(`http://localhost:8000/auth_service/user/id/${selectedUser._id}`, {
+      const response = await fetch(`${authurl}/user/id/${selectedUser._id}`, {
         method: 'PUT',
         credentials: 'include',
         headers: {
@@ -192,7 +192,7 @@ const AdminUsersPage: React.FC = () => {
 
   const handleDelete = async (userId: string) => {
     try {
-      const response = await fetch(`http://localhost:8000/auth_service/user/id/${userId}`, {
+      const response = await fetch(`${authurl}/user/id/${userId}`, {
         method: 'DELETE',
         credentials: 'include',
         headers: {

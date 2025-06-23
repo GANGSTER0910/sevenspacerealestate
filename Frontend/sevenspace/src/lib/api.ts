@@ -1,6 +1,6 @@
 import { url } from "inspector";
 
-const url1 = import.meta.env.VITE_url || 'http://localhost:8000';
+const url1 = import.meta.env.VITE_PROPERTY_URL || 'http://localhost:8000';
 interface FetchOptions extends RequestInit {
   params?: Record<string, string>;
 }

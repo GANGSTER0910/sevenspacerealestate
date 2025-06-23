@@ -10,6 +10,7 @@ import { useToast } from "@/components/ui/use-toast";
 import AdminLayout from "@/components/admin/AdminLayout";
 const url = import.meta.env.VITE_url || 'http://localhost:8000';
 const image_url = import.meta.env.VITE_image_url || 'http://localhost:8003';
+const propertyurl = import.meta.env.VITE_PROPERTY_URL || 'http://localhost:8000/property_service';
 const AddPropertyPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -71,7 +72,7 @@ imageUrls.push(...urls);
       };
 
       // Create property with the image URLs
-      const response = await fetch(`${url}/property_service/property`, {
+      const response = await fetch(`${propertyurl}/property`, {
         method: 'POST',
         credentials: 'include',
         headers: {
