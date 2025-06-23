@@ -28,7 +28,11 @@ app.add_middleware(
         "http://localhost:3000", 
         "https://sevenspacerealestate.vercel.app",
         "http://localhost:5173",
-        "http://localhost:8000" 
+        "http://localhost:8000",
+        AUTH_SERVICE_URL,
+        PROPERTY_SERVICE_URL,
+        NOTIFICATION_SERVICE_URL,
+        IMAGE_SERVICE_URL
     ],
     allow_credentials=True,
     allow_methods=["*"],
