@@ -38,6 +38,7 @@ origins = [
     "http://localhost:5173",
     "http://localhost:8000",
     "https://sevenspacerealestate.vercel.app",
+    "https://sevenspacerealestate.onrender.com",
     "http://localhost:3000",
 ]  
 
