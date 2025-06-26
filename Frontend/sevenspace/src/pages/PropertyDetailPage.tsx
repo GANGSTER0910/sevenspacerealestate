@@ -135,8 +135,8 @@ const PropertyDetailPage: React.FC = () => {
       
       if (isFavorited) {
         // Remove from favorites
-        console.log('Attempting to remove from favorites:', `${url}/property_service/property/${id}/favorite`);
-        const response = await fetch(`${url}/property_service/property/${id}/favorite`, {
+        console.log('Attempting to remove from favorites:', `${url}/property/${id}/favorite`);
+        const response = await fetch(`${url}/property/${id}/favorite`, {
           method: 'DELETE',
           credentials: 'include',
         });
@@ -151,7 +151,7 @@ const PropertyDetailPage: React.FC = () => {
       } else {
         // Add to favorites
         console.log('Attempting to add to favorites:', `${url}/property/${id}/favorite`);
-        const response = await fetch(`${url}/property_service/property/${id}/favorite`, {
+        const response = await fetch(`${url}/property/${id}/favorite`, {
           method: 'POST',
           credentials: 'include',
           headers: {

@@ -13,12 +13,12 @@ const AdminHelpPage: React.FC = () => {
       <div className="max-w-4xl mx-auto">
         <div className="mb-8 text-center">
           <h1 className="text-3xl font-bold mb-2">How can we help you?</h1>
-          <p className="text-gray-500 mb-6">Search our knowledge base or browse the topics below</p>
+          {/* <p className="text-gray-500 mb-6">Search our knowledge base or browse the topics below</p> */}
           
-          <div className="relative max-w-lg mx-auto">
+          {/* <div className="relative max-w-lg mx-auto">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input placeholder="Search help articles..." className="pl-10" />
-          </div>
+          </div> */}
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -93,12 +93,12 @@ const AdminHelpPage: React.FC = () => {
               </AccordionContent>
             </AccordionItem>
             
-            <AccordionItem value="item-5">
+            {/* <AccordionItem value="item-5">
               <AccordionTrigger>How do I change system settings?</AccordionTrigger>
               <AccordionContent>
                 To change system settings, navigate to the Settings section from the sidebar. Here you can modify general settings, notification preferences, security settings, and more. Remember to save your changes after making modifications.
               </AccordionContent>
-            </AccordionItem>
+            </AccordionItem> */}
           </Accordion>
         </div>
         

@@ -23,6 +23,24 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
+import { saveAs } from "file-saver";
+
+// Utility to convert array of objects to CSV
+function convertToCSV(arr: any[]) {
+  if (!arr.length) return '';
+  const header = Object.keys(arr[0]);
+  const csvRows = [header.join(",")];
+  for (const row of arr) {
+    const values = header.map(field => {
+      let value = row[field];
+      if (Array.isArray(value)) value = value.join("; ");
+      if (typeof value === "object" && value !== null) value = JSON.stringify(value);
+      return `"${String(value).replace(/"/g, '""')}"`;
+    });
+    csvRows.push(values.join(","));
+  }
+  return csvRows.join("\n");
+}
 
 interface ContactMessage {
   name: string;
@@ -108,7 +126,27 @@ const AdminInquiriesPage: React.FC = () => {
       minute: '2-digit'
     });
   };
-
+const handleExport = () => {
+    if (!messages.length) {
+      toast({
+        title: "No properties to export",
+        description: "There are no properties to export.",
+        variant: "destructive"
+      });
+      return;
+    }
+    // Prepare a flat version of properties for CSV
+    const flatProps = messages.map(({name, email, subject, content }) => ({
+      // ...rest,
+      name: name,
+      email: email,
+      subject: subject,
+      content: content
+    }));
+    const csv = convertToCSV(flatProps);
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    saveAs(blob, "inquires_export.csv");
+  };
   return (
     <AdminLayout title="Inquires">
       <div className="flex justify-between items-center mb-6">
@@ -121,8 +159,17 @@ const AdminInquiriesPage: React.FC = () => {
             className="pl-8"
           />
         </div>
+      {/* </div> */}
+      <div className="flex gap-2">
+        <Button 
+          onClick={handleExport}
+          variant="outline"
+          className="bg-realestate-primary hover:bg-realestate-secondary text-white"
+        >
+          Export Messages
+        </Button>
       </div>
-
+      </div>
       <div className="bg-white rounded-lg shadow">
         <Table>
           <TableHeader>

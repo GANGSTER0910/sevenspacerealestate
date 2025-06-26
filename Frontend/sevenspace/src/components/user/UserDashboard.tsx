@@ -283,9 +283,12 @@ const handleRemoveFavorite = async (propertyId: string) => {
         });
       }
 
-      toast.success('Profile Updated', {
-        description: 'Your profile has been updated successfully.',
+      setTimeout(() => {
+      toast.success("Preferences Saved", {
+        description: "Your profile has been updated successfully."
       });
+      setIsNotificationsSaving(false);
+    }, 1000);
     } catch (error: any) {
       console.error('Error updating profile:', error);
       toast.error('Update Failed', {
@@ -331,7 +334,12 @@ const handleRemoveFavorite = async (propertyId: string) => {
         throw new Error(errorData.detail || 'Failed to change password');
       }
 
-      toast.success('Password Updated', { description: 'Your password has been changed successfully.' });
+      setTimeout(() => {
+      toast.success("Preferences Saved", {
+        description: "Your password has been updated."
+      });
+      setIsNotificationsSaving(false);
+    }, 1000);
       setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
     } catch (error: any) {
       toast.error('Update Failed', { description: error.message || 'Failed to change password' });
@@ -391,14 +399,14 @@ const handleRemoveFavorite = async (propertyId: string) => {
                   <Heart className="mr-2 h-4 w-4" />
                   Favorites
                 </Button>
-                <Button 
+                {/* <Button 
                   variant={activeTab === "messages" ? "default" : "ghost"} 
                   className="justify-start"
                   onClick={() => setActiveTab("messages")}
                 >
                   <MessageSquare className="mr-2 h-4 w-4" />
                   Messages
-                </Button>
+                </Button> */}
                 <Button 
                   variant={activeTab === "settings" ? "default" : "ghost"} 
                   className="justify-start"
@@ -623,7 +631,7 @@ const handleRemoveFavorite = async (propertyId: string) => {
             </>
           )}
 
-          {activeTab === "messages" && (
+          {/* {activeTab === "messages" && (
             <Card>
               <CardHeader>
                 <CardTitle>Messages</CardTitle>
@@ -651,7 +659,7 @@ const handleRemoveFavorite = async (propertyId: string) => {
                 </div>
               </CardContent>
             </Card>
-          )}
+          )} */}
 
           {activeTab === "settings" && (
             <Card>

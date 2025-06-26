@@ -26,6 +26,24 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Plus, Search, Edit, Trash2, Eye } from "lucide-react";
+import { saveAs } from "file-saver";
+
+// Utility to convert array of objects to CSV
+function convertToCSV(arr: any[]) {
+  if (!arr.length) return '';
+  const header = Object.keys(arr[0]);
+  const csvRows = [header.join(",")];
+  for (const row of arr) {
+    const values = header.map(field => {
+      let value = row[field];
+      if (Array.isArray(value)) value = value.join("; ");
+      if (typeof value === "object" && value !== null) value = JSON.stringify(value);
+      return `"${String(value).replace(/"/g, '""')}"`;
+    });
+    csvRows.push(values.join(","));
+  }
+  return csvRows.join("\n");
+}
 
 const AdminPropertiesPage: React.FC = () => {
   const [properties, setProperties] = useState<Property[]>([]);
@@ -85,6 +103,27 @@ const AdminPropertiesPage: React.FC = () => {
     setSearchTerm(e.target.value);
   };
 
+  const handleExport = () => {
+    if (!properties.length) {
+      toast({
+        title: "No properties to export",
+        description: "There are no properties to export.",
+        variant: "destructive"
+      });
+      return;
+    }
+    // Prepare a flat version of properties for CSV
+    const flatProps = properties.map(({ images, amenities, features, ...rest }) => ({
+      ...rest,
+      images: images?.join('; '),
+      amenities: amenities?.join('; '),
+      features: features?.join('; ')
+    }));
+    const csv = convertToCSV(flatProps);
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    saveAs(blob, "properties_export.csv");
+  };
+
   const filteredProperties = properties.filter(property => 
     property.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     property.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -111,13 +150,21 @@ const AdminPropertiesPage: React.FC = () => {
             className="pl-8"
           />
         </div>
-        <Button 
-          onClick={handleAdd}
-          className="bg-realestate-primary hover:bg-realestate-secondary"
-        >
+        <div className="flex gap-2">
+          <Button 
+            onClick={handleAdd}
+            variant="outline"
+          >
             <Plus className="h-4 w-4 mr-2" />
             Add Property
           </Button>
+          <Button 
+            onClick={handleExport}
+            className="bg-realestate-primary hover:bg-realestate-secondary"
+          >
+            Export Properties
+          </Button>
+        </div>
       </div>
 
       <div className="bg-white rounded-lg shadow">
