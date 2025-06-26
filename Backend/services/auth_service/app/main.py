@@ -164,8 +164,8 @@ def create_cookie(token: str):
         key="session",
         value=token,
         httponly=True,
-        secure=False,  
-        samesite='lax',
+        secure=True,  
+        samesite='none',
         max_age=3600,  
         path="/",  
         domain=None
@@ -358,8 +358,8 @@ async def user_login(user: User_login):
                     key="session",
                     value=user_token,
                     httponly=True,
-                    secure=False,  # Set to False for local development (http)
-                    samesite='lax',  # Use 'lax' for local development
+                    secure=True,  # Set to False for local development (http)
+                    samesite='none',  # Use 'none' for local development
                     max_age=3600,
                     path="/"
                 )

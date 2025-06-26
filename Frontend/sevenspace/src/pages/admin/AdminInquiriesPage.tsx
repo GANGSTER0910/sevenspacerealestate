@@ -74,13 +74,29 @@ const AdminInquiriesPage: React.FC = () => {
   );
 
   const handleDelete = async (email: string) => {
-    // TODO: Implement delete functionality when backend endpoint is available
+  try {
+    const response = await fetch(`${url}/contact/messages/${email}`, {
+      method: 'DELETE',
+    });
+    if (!response.ok) {
+      throw new Error("Failed to delete message");
+    }
+    
+    // Move this inside the try block after successful API call
     setMessages(messages.filter(message => message.email !== email));
     toast({
       title: "Success",
       description: "Message deleted successfully",
     });
-  };
+  } catch (error) {
+    // Add proper error handling
+    toast({
+      title: "Error",
+      description: "Failed to delete message. Please try again.",
+      variant: "destructive",
+    });
+  }
+};
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);

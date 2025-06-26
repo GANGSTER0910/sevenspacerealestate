@@ -37,7 +37,7 @@ const AboutPage: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-gray-900">Mr. Harsh Panchal</h3>
+                  <h3 className="text-xl font-bold text-gray-900">Mr. Pravin Sachaniya</h3>
                   <p className="text-sm text-gray-500">FOUNDER & MANAGING DIRECTOR</p>
                   <p className="mt-2 text-gray-700">BTech</p>
                   <p className="mt-2 text-gray-600">

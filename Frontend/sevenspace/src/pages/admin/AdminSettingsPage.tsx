@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -10,7 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/components/ui/use-toast";
-
+import { useAuth } from "@/contexts/AuthContext";
+const url = import.meta.env.VITE_AUTH_URL || 'http://localhost:8000';
 const AdminSettingsPage: React.FC = () => {
   // Get the toast hook for notifications
   const { toast } = useToast();
@@ -34,12 +34,19 @@ const AdminSettingsPage: React.FC = () => {
     dailySummary: true,
     importantAlerts: true
   });
-
+  const {user} = useAuth();
   // State for showing loading indicators
   const [isGeneralSaving, setIsGeneralSaving] = useState(false);
   const [isNotificationsSaving, setIsNotificationsSaving] = useState(false);
   const [isSecuritySaving, setIsSecuritySaving] = useState(false);
   
+  // State for security form
+  const [securityForm, setSecurityForm] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: ""
+  });
+
   // Handle input changes for general settings
   const handleGeneralChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target;
@@ -49,6 +56,12 @@ const AdminSettingsPage: React.FC = () => {
   // Handle toggle changes for notification settings
   const handleToggleChange = (id: string, checked: boolean) => {
     setNotificationSettings(prev => ({ ...prev, [id]: checked }));
+  };
+
+  // Handle input changes for security form
+  const handleSecurityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    setSecurityForm(prev => ({ ...prev, [id]: value }));
   };
 
   const handleSaveGeneral = (e: React.FormEvent) => {
@@ -79,213 +92,65 @@ const AdminSettingsPage: React.FC = () => {
     }, 1000);
   };
 
-  const handleSaveSecurity = (e: React.FormEvent) => {
+  const handleSaveSecurity = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSecuritySaving(true);
-    
-    // Simulate API call with timeout
-    setTimeout(() => {
+
+    // Validate new password and confirm password match
+    if (securityForm.newPassword !== securityForm.confirmPassword) {
       toast({
-        title: "Settings Saved",
-        description: "Security settings have been saved successfully.",
+        title: "Error",
+        description: "New password and confirm password do not match.",
+        variant: "destructive"
       });
       setIsSecuritySaving(false);
-    }, 1000);
+      return;
+    }
+
+    try {
+      const response = await fetch(`${url}/user/change-password`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          email : user.email,
+          old_password: securityForm.currentPassword,
+          new_password: securityForm.newPassword
+        })
+      });
+      if (response.ok) {
+        toast({
+          title: "Password Changed",
+          description: "Your password has been updated successfully.",
+        });
+        setSecurityForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      } else {
+        const data = await response.json();
+        toast({
+          title: "Error",
+          description: data.detail || "Failed to change password.",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An error occurred while changing password.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSecuritySaving(false);
+    }
   };
 
   return (
     <AdminLayout title="Settings">
-      <Tabs defaultValue="general" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 mb-8">
-          <TabsTrigger value="general">General</TabsTrigger>
-          <TabsTrigger value="notifications">Notifications</TabsTrigger>
+      <Tabs defaultValue="security" className="w-full">
+        <TabsList className="grid w-full grid-cols-1 mb-8">
           <TabsTrigger value="security">Security</TabsTrigger>
         </TabsList>
-        
-        <TabsContent value="general">
-          <Card>
-            <CardHeader>
-              <CardTitle>General Settings</CardTitle>
-              <CardDescription>
-                Manage your site details and preferences
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSaveGeneral} className="space-y-6">
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium">Site Information</h3>
-                  <div className="grid gap-4">
-                    <div>
-                      <Label htmlFor="siteName">Site Name</Label>
-                      <Input 
-                        id="siteName" 
-                        value={generalSettings.siteName} 
-                        onChange={handleGeneralChange}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="siteDescription">Site Description</Label>
-                      <Textarea 
-                        id="siteDescription" 
-                        value={generalSettings.siteDescription}
-                        onChange={handleGeneralChange}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="contactEmail">Contact Email</Label>
-                      <Input 
-                        id="contactEmail" 
-                        type="email" 
-                        value={generalSettings.contactEmail}
-                        onChange={handleGeneralChange}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="contactPhone">Contact Phone</Label>
-                      <Input 
-                        id="contactPhone" 
-                        value={generalSettings.contactPhone}
-                        onChange={handleGeneralChange}
-                      />
-                    </div>
-                  </div>
-                </div>
-                
-                <Separator className="my-6" />
-                
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium">SEO Settings</h3>
-                  <div className="grid gap-4">
-                    <div>
-                      <Label htmlFor="metaTitle">Default Meta Title</Label>
-                      <Input 
-                        id="metaTitle" 
-                        value={generalSettings.metaTitle}
-                        onChange={handleGeneralChange}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="metaDescription">Default Meta Description</Label>
-                      <Textarea 
-                        id="metaDescription" 
-                        value={generalSettings.metaDescription}
-                        onChange={handleGeneralChange}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="metaKeywords">Default Meta Keywords</Label>
-                      <Input 
-                        id="metaKeywords" 
-                        value={generalSettings.metaKeywords}
-                        onChange={handleGeneralChange}
-                      />
-                    </div>
-                  </div>
-                </div>
-                
-                <Button 
-                  type="submit" 
-                  className="bg-realestate-primary hover:bg-realestate-secondary"
-                  disabled={isGeneralSaving}
-                >
-                  {isGeneralSaving ? "Saving..." : "Save Changes"}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="notifications">
-          <Card>
-            <CardHeader>
-              <CardTitle>Notification Settings</CardTitle>
-              <CardDescription>
-                Configure how and when you receive notifications
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSaveNotifications} className="space-y-6">
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium">Email Notifications</h3>
-                  <div className="grid gap-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label htmlFor="newInquiry">New Inquiry</Label>
-                        <p className="text-sm text-gray-500">Receive an email when a new property inquiry is submitted</p>
-                      </div>
-                      <Switch 
-                        id="newInquiry" 
-                        checked={notificationSettings.newInquiry}
-                        onCheckedChange={(checked) => handleToggleChange("newInquiry", checked)}
-                      />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label htmlFor="newUser">New User Registration</Label>
-                        <p className="text-sm text-gray-500">Receive an email when a new user registers</p>
-                      </div>
-                      <Switch 
-                        id="newUser" 
-                        checked={notificationSettings.newUser}
-                        onCheckedChange={(checked) => handleToggleChange("newUser", checked)}
-                      />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label htmlFor="propertyUpdates">Property Updates</Label>
-                        <p className="text-sm text-gray-500">Receive an email when properties are updated</p>
-                      </div>
-                      <Switch 
-                        id="propertyUpdates"
-                        checked={notificationSettings.propertyUpdates}
-                        onCheckedChange={(checked) => handleToggleChange("propertyUpdates", checked)}
-                      />
-                    </div>
-                  </div>
-                </div>
-                
-                <Separator className="my-6" />
-                
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium">System Notifications</h3>
-                  <div className="grid gap-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label htmlFor="dailySummary">Daily Summary</Label>
-                        <p className="text-sm text-gray-500">Receive a daily summary of activities</p>
-                      </div>
-                      <Switch 
-                        id="dailySummary" 
-                        checked={notificationSettings.dailySummary}
-                        onCheckedChange={(checked) => handleToggleChange("dailySummary", checked)}
-                      />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label htmlFor="importantAlerts">Important Alerts</Label>
-                        <p className="text-sm text-gray-500">Receive notifications for important system alerts</p>
-                      </div>
-                      <Switch 
-                        id="importantAlerts" 
-                        checked={notificationSettings.importantAlerts}
-                        onCheckedChange={(checked) => handleToggleChange("importantAlerts", checked)}
-                      />
-                    </div>
-                  </div>
-                </div>
-                
-                <Button 
-                  type="submit" 
-                  className="bg-realestate-primary hover:bg-realestate-secondary"
-                  disabled={isNotificationsSaving}
-                >
-                  {isNotificationsSaving ? "Saving..." : "Save Changes"}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
         <TabsContent value="security">
           <Card>
             <CardHeader>
@@ -300,22 +165,20 @@ const AdminSettingsPage: React.FC = () => {
                   <h3 className="text-lg font-medium">Password</h3>
                   <div className="grid gap-4">
                     <div>
-                      <Label htmlFor="current-password">Current Password</Label>
-                      <Input id="current-password" type="password" />
+                      <Label htmlFor="currentPassword">Current Password</Label>
+                      <Input id="currentPassword" type="password" value={securityForm.currentPassword} onChange={handleSecurityChange} />
                     </div>
                     <div>
-                      <Label htmlFor="new-password">New Password</Label>
-                      <Input id="new-password" type="password" />
+                      <Label htmlFor="newPassword">New Password</Label>
+                      <Input id="newPassword" type="password" value={securityForm.newPassword} onChange={handleSecurityChange} />
                     </div>
                     <div>
-                      <Label htmlFor="confirm-password">Confirm New Password</Label>
-                      <Input id="confirm-password" type="password" />
+                      <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                      <Input id="confirmPassword" type="password" value={securityForm.confirmPassword} onChange={handleSecurityChange} />
                     </div>
                   </div>
                 </div>
-                
                 <Separator className="my-6" />
-                
                 <div className="space-y-4">
                   <h3 className="text-lg font-medium">Two-Factor Authentication</h3>
                   <div className="grid gap-4">
@@ -328,9 +191,7 @@ const AdminSettingsPage: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                
                 <Separator className="my-6" />
-                
                 <div className="space-y-4">
                   <h3 className="text-lg font-medium">Session Management</h3>
                   <div className="grid gap-4">
@@ -343,7 +204,6 @@ const AdminSettingsPage: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                
                 <Button 
                   type="submit" 
                   className="bg-realestate-primary hover:bg-realestate-secondary"

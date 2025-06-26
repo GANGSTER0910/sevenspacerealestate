@@ -2,7 +2,7 @@ import fetchApi from '@/lib/api';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Property as PropertyType, PropertyType as PropertyTypeEnum, PropertyStatus } from '@/types/property';
 
-const mapBackendToFrontendProperty = (prop: any): PropertyType => {
+export const mapBackendToFrontendProperty = (prop: any): PropertyType => {
   const area = typeof prop.area_sqft === 'number' ? prop.area_sqft : 0;
   return {
     _id: String(prop._id || prop.id),

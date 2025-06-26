@@ -255,6 +255,20 @@ async def get_contact_messages():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve messages: {str(e)}")
 
+@app.delete("/contact/messages/{email}")
+async def delete_contact_message(email: str):
+    try:
+        if not validate_email(email):
+            raise HTTPException(status_code=400, detail="Invalid email format")
+        
+        result = db1.get_collection('Contact').delete_one({"email": email})
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Message not found")
+        
+        return {"message": "Contact message deleted successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete message: {str(e)}")
+
 @app.get("/health")
 async def health_check():
     """
