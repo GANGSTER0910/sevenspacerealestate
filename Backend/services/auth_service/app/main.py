@@ -168,7 +168,7 @@ def create_cookie(token: str):
         samesite='none',
         max_age=3600,  
         path="/",  
-        domain=None
+        domain=".vercel.app"
     )
     return response
 
@@ -362,7 +362,7 @@ async def user_login(user: User_login):
         samesite='none',
         max_age=3600,  
         path="/",  
-        domain=None
+        domain=".vercel.app"
                 )
 
                 print("Login successful for user:", user.email)  # Log successful login
