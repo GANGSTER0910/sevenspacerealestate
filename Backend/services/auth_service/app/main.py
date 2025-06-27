@@ -355,13 +355,14 @@ async def user_login(user: User_login):
 
                 # Set cookie with proper attributes for local development
                 response.set_cookie(
-                    key="session",
-                    value=user_token,
-                    httponly=True,
-                    secure=True,  # Set to False for local development (http)
-                    samesite='none',  # Use 'none' for local development
-                    max_age=3600,
-                    path="/"
+                     key="session",
+        value=user_token,
+        httponly=True,
+        secure=True,  
+        samesite='none',
+        max_age=3600,  
+        path="/",  
+        domain=None
                 )
 
                 print("Login successful for user:", user.email)  # Log successful login

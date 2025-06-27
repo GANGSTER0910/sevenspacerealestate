@@ -7,7 +7,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 // import { getPropertyById } from "@/services/propertyService";
 import { toast } from "sonner";
 import { MapPin, Bed, Bath, Square, Heart, Share, Calendar, User } from "lucide-react";
-import { propertyService, Property } from '@/services/property.service';
+import { propertyService } from '@/services/property.service';
+import { Property } from '@/types/property';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from '@/contexts/AuthContext';
@@ -156,7 +157,6 @@ const PropertyDetailPage: React.FC = () => {
           credentials: 'include',
           headers: {
             'Content-Type': 'application/json',
-
           }
         });
         
@@ -325,7 +325,7 @@ const PropertyDetailPage: React.FC = () => {
               <div className="text-2xl font-bold text-realestate-primary mb-2">
                 {formatPrice(property.price)}
                 <span className="text-sm font-normal text-gray-500 ml-1">
-                  {property.property_type === 'pg' || property.property_type === 'hostel' ? '/month' : ''}
+                  {property.property_type === 'PG' || property.property_type === 'Hostel' ? '/month' : ''}
                 </span>
               </div>
               
@@ -348,7 +348,7 @@ const PropertyDetailPage: React.FC = () => {
                     <Heart 
                       className={`h-4 w-4 mr-2 ${isFavorited ? 'fill-[#ea384c] text-[#ea384c]' : ''}`} 
                     />
-                    {isFavoriteLoading ? "Saving..." : isFavorited ? "Saved" : "Save"}
+                    {isFavoriteLoading ? "Saving..." : isFavorited ? "Added to Favorites" : "Add to favorite"}
                   </Button>
                   
                   <Button

@@ -399,11 +399,13 @@ async def get_favorites(request: Request):
     try:
         # Check authentication
         session = request.cookies.get('session')
+        print(session)
         if not session:
             raise HTTPException(status_code=401, detail="Not authenticated")
 
         # Decode user email from token
         user_data = decode_Access_token(session)
+        print(user_data)
         user_email = user_data.get("email")
         if not user_email:
             raise HTTPException(status_code=400, detail="Invalid token")
