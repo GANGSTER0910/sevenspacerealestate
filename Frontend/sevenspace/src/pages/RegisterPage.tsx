@@ -15,7 +15,7 @@ const RegisterPage: React.FC = () => {
             </p>
             <div className="hidden lg:block">
               <img
-                src="/lovable-uploads/5db3b84e-3519-4a36-98c1-b19371c9b938.png"
+                src="https://res.cloudinary.com/dzhwkg2io/image/upload/v1751111317/properties/zrgxmupa3c0a6v1uwe2s.png"
                 alt="Register"
                 className="rounded-lg shadow-lg"
               />
