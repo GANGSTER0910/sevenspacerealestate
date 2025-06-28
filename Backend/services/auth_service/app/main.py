@@ -61,7 +61,7 @@ oauth.register(
     client_secret=CLIENT_SECRET,
     client_kwargs={
         'scope': 'email openid profile',
-        'redirect_url': 'https://sevenspacerealestate-1.onrender.com/google/auth flowName=GeneralOAuthFlow '
+        'redirect_url': 'https://sevenspacerealestate-1.onrender.com/google/auth '
     }
 )
 @app.on_event("startup")
