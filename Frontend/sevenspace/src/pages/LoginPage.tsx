@@ -35,7 +35,7 @@ const LoginPage: React.FC = () => {
             </p>
             <div className="hidden lg:block">
               <img
-                src="/lovable-uploads/5f8c14d4-6d14-4ff2-8844-b9bfecf97271.png"
+                src="https://res.cloudinary.com/dzhwkg2io/image/upload/v1751111317/properties/zrgxmupa3c0a6v1uwe2s.png"
                 alt="Login"
                 className="rounded-lg shadow-lg"
               />
