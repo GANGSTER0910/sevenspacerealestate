@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta, timezone
 from fastapi import *
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from pymongo import *
 import os
 from dotenv import load_dotenv
@@ -449,7 +449,18 @@ async def google_auth(request: Request):
         access_token = create_access_token(data=token_data)
 
         response = create_cookie(access_token)
-        response.content = "Google authentication successful. Welcome!"
+        response = RedirectResponse(url="https://sevenspacerealestate.vercel.app/auth/google/callback")
+        response.set_cookie(
+            key="session",
+            value=access_token,
+            httponly=True,
+            secure=True,
+            samesite='none',
+            max_age=3600,
+            path="/",
+            domain=".vercel.app"
+        )
+        # response.content = "Google authentication successful. Welcome!"
         return response
 
     except OAuthError as error:
