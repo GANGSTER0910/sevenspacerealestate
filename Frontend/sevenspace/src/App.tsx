@@ -18,6 +18,7 @@ import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import UserDashboardPage from "./pages/UserDashboardPage";
 import FavoritesPage from "./pages/FavoritesPage";
 import UserAddPropertyPage from "./pages/user/AddPropertyPage";
+import GoogleCallbackPage from "./pages/GoogleCallbackPage";
 
 // Admin pages
 import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
@@ -162,6 +163,7 @@ const App = () => (
                 />
                 <Route path="/admin/properties/add" element={<AddPropertyPage />} />
                 <Route path="/admin/properties/edit/:propertyId" element={<EditPropertyPage />} />
+                <Route path="/auth/google/callback" element={<GoogleCallbackPage />} />
               </Routes>
             </div>
           </TooltipProvider>
