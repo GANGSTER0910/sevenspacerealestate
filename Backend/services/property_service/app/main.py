@@ -358,7 +358,7 @@ async def check_favorite_status(property_id: str, request: Request):
         user = db1.get_collection('User').find_one({"email": user_email})
 
         is_favorited = False
-        if user and "favorites" in user and property_id in user["favorites"]:
+        if user and isinstance(user.get("favorites", []), list) and property_id in user.get("favorites", []):
             is_favorited = True
             
         return {"isFavorited": is_favorited}
