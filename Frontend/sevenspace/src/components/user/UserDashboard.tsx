@@ -122,7 +122,7 @@ const fetchFavorites = async () => {
     setIsLoadingFavorites(true);
     
     // First, get the list of favorite IDs
-    const response = await fetch(`${propertyurl}/property/favorites`, {
+    const response = await fetch(`${propertyurl}/property/favorites?email=${user.email}`, {
       method: 'GET',
       credentials: 'include',
       headers: {
@@ -152,7 +152,7 @@ const fetchFavorites = async () => {
 const fetchMyProperties = async () => {
   try {
     setIsLoadingMyProperties(true);
-    const response = await fetch(`${propertyurl}/property/my`, {
+    const response = await fetch(`${propertyurl}/property/my?email=${user.email}`, {
       method: 'GET',
       credentials: 'include',
       headers: {
@@ -177,7 +177,7 @@ const fetchMyProperties = async () => {
 
 const handleRemoveFavorite = async (propertyId: string) => {
     try {
-      const response = await fetch(`${propertyurl}/property/${propertyId}/favorite`, {
+      const response = await fetch(`${propertyurl}/property/${propertyId}/favorite?email=${user.email}`, {
         method: 'DELETE',
         credentials: 'include',
         headers: {

@@ -31,55 +31,54 @@ const PropertyDetailPage: React.FC = () => {
   const [isFavorited, setIsFavorited] = React.useState(false);
   const [user, setUser] = useState(null);
 
-useEffect(() => {
-  const fetchUser = async () => {
-    try {
-      const response = await fetch(`${authurl}/user/me`, {
-        method: 'GET',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-      });
-      if (!response.ok) throw new Error('Failed to load profile');
-      const data = await response.json();
-      setUser(data.user); // Save the whole user object
-    } catch (err) {
-      setUser(null);
-    }
-  };
-  fetchUser();
-}, []);
+  // Move checkFavoriteStatus here so it's accessible
   const checkFavoriteStatus = async (propertyId: string) => {
     try {
-      const response = await fetch(`${url}/property/${propertyId}/favorite`, {
+      const response = await fetch(`${url}/property/${propertyId}/favorite?email=${user.email}`, {
         method: 'GET',
         credentials: 'include',
         headers: {
           'Accept': 'application/json'
-        },
-        body: JSON.stringify({ email: user.email })
+        }
       });
 
       if (response.ok) {
-        // Assuming the backend returns a JSON body like { isFavorited: true/false }
         const data = await response.json();
         setIsFavorited(data.isFavorited || false);
       } else if (response.status === 404) {
-        // Not found means it's not favorited
         setIsFavorited(false);
-        navigate('/login'); // Redirect to login if not found
+        navigate('/login');
       } else {
         console.error('Failed to check favorite status:', response.status, response.statusText);
-        setIsFavorited(false); // Assume not favorited on other errors
+        setIsFavorited(false);
       }
     } catch (error) {
       console.error('Error checking favorite status:', error);
-      setIsFavorited(false); // Assume not favorited on fetch errors
+      setIsFavorited(false);
     }
   };
 
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const response = await fetch(`${authurl}/user/me`, {
+          method: 'GET',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+        });
+        if (!response.ok) throw new Error('Failed to load profile');
+        const data = await response.json();
+        setUser(data.user); // Save the whole user object
+      } catch (err) {
+        setUser(null);
+      }
+    };
+    fetchUser();
+  }, []);
+  
   useEffect(() => {
     const fetchProperty = async () => {
       try {
@@ -89,8 +88,6 @@ useEffect(() => {
           throw new Error('Property not found');
         }
         setProperty(data);
-        // After fetching property, check if it's favorited by the current user
-        await checkFavoriteStatus(id);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load property');
         toast.error("Failed to load property details. Please try again later.");
@@ -101,6 +98,12 @@ useEffect(() => {
 
     fetchProperty();
   }, [id]);
+
+  useEffect(() => {
+    if (id && user && user.email) {
+      checkFavoriteStatus(id);
+    }
+  }, [id, user]);
 
   if (isLoading) {
     return (
@@ -160,7 +163,7 @@ useEffect(() => {
       if (isFavorited) {
         // Remove from favorites
         console.log('Attempting to remove from favorites:', `${url}/property/${id}/favorite`);
-        const response = await fetch(`${url}/property/${id}/favorite`, {
+        const response = await fetch(`${url}/property/${id}/favorite?email=${user.email}`, {
           method: 'DELETE',
           credentials: 'include',
           body: JSON.stringify({ email: user.email })
@@ -175,14 +178,10 @@ useEffect(() => {
         toast.success("Property removed from favorites");
       } else {
         // Add to favorites
-        console.log('Attempting to add to favorites:', `${url}/property/${id}/favorite`);
-        const response = await fetch(`http://localhost:8002/property/${id}/favorite`, {
+        console.log('Attempting to add to favorites:', `${url}/property/${id}/favorite?email=${user.email}`);
+        const response = await fetch(`${url}/property/${id}/favorite?email=${user.email}`, {
           method: 'POST',
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ email: user.email })
+          credentials: 'include'
         });
         
         if (!response.ok) {

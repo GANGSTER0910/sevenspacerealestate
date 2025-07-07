@@ -401,15 +401,9 @@ async def get_favorites(email: str):
         return {"favorites": []}
 
 @app.get("/property/my")
-async def get_my_properties(request: Request):
+async def get_my_properties(email:str):
     try:
-        # Authenticate user via session cookie
-        session = request.cookies.get('session')
-        if not session:
-            raise HTTPException(status_code=401, detail="Not authenticated")
-
-        user_data = decode_Access_token(session)
-        user_email = user_data.get("email")
+        user_email = email
         if not user_email:
             raise HTTPException(status_code=400, detail="Invalid token")
 
