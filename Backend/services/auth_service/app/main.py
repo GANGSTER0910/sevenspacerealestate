@@ -449,7 +449,7 @@ async def google_auth(request: Request):
         access_token = create_access_token(data=token_data)
 
         response = create_cookie(access_token)
-        # response = RedirectResponse(url="https://sevenspacerealestate.vercel.app/auth/google/callback")
+        response = RedirectResponse(url="https://sevenspacerealestate.vercel.app/auth/google/callback")
         response.set_cookie(
             key="session",
             value=access_token,
@@ -460,7 +460,7 @@ async def google_auth(request: Request):
             path="/",
             
         )
-        response.content = "Google authentication successful. Welcome!"
+        # response.content = "Google authentication successful. Welcome!"
         return response
 
     except OAuthError as error:
