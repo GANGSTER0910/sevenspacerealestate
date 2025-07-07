@@ -309,17 +309,12 @@ async def edit_property(property_id: str, property: Property):
         raise HTTPException(status_code=400, detail=str(e))
 
 @app.post("/property/{property_id}/favorite")
-async def add_to_favorites(property_id: str, request: Request):
+async def add_to_favorites(property_id: str, email:str):
     try:
         # Check authentication
-        session = request.cookies.get('session')
-        if not session:
+        user_email = email
+        if not user_email:
             raise HTTPException(status_code=401, detail="Not authenticated")
-            
-        # Get user email from token
-        user_data = decode_Access_token(session)
-        user_email = user_data.get("email")
-        
         # Check if property exists and convert to ObjectId
         try:
             object_id = ObjectId(property_id)
@@ -343,20 +338,14 @@ async def add_to_favorites(property_id: str, request: Request):
         raise HTTPException(status_code=400, detail=str(e))
 
 @app.get("/property/{property_id}/favorite")
-async def check_favorite_status(property_id: str, request: Request):
+async def check_favorite_status(property_id: str, email: str):
     try:
         # Check authentication
-        session = request.cookies.get('session')
-        if not session:
+        user_email = email
+        if not email:
             raise HTTPException(status_code=401, detail="Not authenticated")
             
-        # Get user email from token
-        user_data = decode_Access_token(session)
-        user_email = user_data.get("email")
-        
-        # Get user and check if property_id is in favorites list
         user = db1.get_collection('User').find_one({"email": user_email})
-
         is_favorited = False
         if user and isinstance(user.get("favorites", []), list) and property_id in user.get("favorites", []):
             is_favorited = True
@@ -364,24 +353,13 @@ async def check_favorite_status(property_id: str, request: Request):
         return {"isFavorited": is_favorited}
         
     except Exception as e:
-        # Log the error for debugging
         print(f"Error checking favorite status: {e}")
-        # Return a generic error response, or a specific one if needed
         raise HTTPException(status_code=500, detail="Failed to check favorite status")
 
 @app.delete("/property/{property_id}/favorite")
-async def remove_from_favorites(property_id: str, request: Request):
+async def remove_from_favorites(property_id: str, email: str):
     try:
-        # Check authentication
-        session = request.cookies.get('session')
-        if not session:
-            raise HTTPException(status_code=401, detail="Not authenticated")
-            
-        # Get user email from token
-        user_data = decode_Access_token(session)
-        user_email = user_data.get("email")
-        
-        # Remove from user's favorites
+        user_email = email
         result = db1.get_collection('User').update_one(
             {"email": user_email},
             {"$pull": {"favorites": property_id}}
@@ -395,27 +373,16 @@ async def remove_from_favorites(property_id: str, request: Request):
         raise HTTPException(status_code=400, detail=str(e))
 
 @app.get("/property/favorites")
-async def get_favorites(request: Request):
+async def get_favorites(email: str):
     try:
-        # Check authentication
-        session = request.cookies.get('session')
-        print(session)
-        if not session:
-            raise HTTPException(status_code=401, detail="Not authenticated")
-
-        # Decode user email from token
-        user_data = decode_Access_token(session)
-        print(user_data)
-        user_email = user_data.get("email")
+        user_email = email
         if not user_email:
             raise HTTPException(status_code=400, detail="Invalid token")
 
-        # Find user
         user = db1.get_collection('User').find_one({"email": user_email})
         if not user or "favorites" not in user:
             return {"favorites": []}
 
-        # Fetch all properties from favorites
         favorite_properties = []
         for prop_id_str in user["favorites"]:
             try:

@@ -12,9 +12,10 @@ import { Property } from '@/types/property';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from '@/contexts/AuthContext';
+// import { console } from 'inspector';
 
-const url = import.meta.env.VITE_PROPERTY_URL || 'http://localhost:8000/property_service';
-
+const url = import.meta.env.VITE_PROPERTY_URL || 'http://localhost:8002/property_service';
+const authurl = import.meta.env.VITE_AUTH_URL || 'http://localhost:8001/auth_service';
 const PropertyDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [property, setProperty] = useState<Property | null>(null);
@@ -28,7 +29,28 @@ const PropertyDetailPage: React.FC = () => {
   const [isFavoriteLoading, setIsFavoriteLoading] = React.useState(false);
   // Add state to track if the property is favorited
   const [isFavorited, setIsFavorited] = React.useState(false);
-  
+  const [user, setUser] = useState(null);
+
+useEffect(() => {
+  const fetchUser = async () => {
+    try {
+      const response = await fetch(`${authurl}/user/me`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      });
+      if (!response.ok) throw new Error('Failed to load profile');
+      const data = await response.json();
+      setUser(data.user); // Save the whole user object
+    } catch (err) {
+      setUser(null);
+    }
+  };
+  fetchUser();
+}, []);
   const checkFavoriteStatus = async (propertyId: string) => {
     try {
       const response = await fetch(`${url}/property/${propertyId}/favorite`, {
@@ -36,7 +58,8 @@ const PropertyDetailPage: React.FC = () => {
         credentials: 'include',
         headers: {
           'Accept': 'application/json'
-        }
+        },
+        body: JSON.stringify({ email: user.email })
       });
 
       if (response.ok) {
@@ -140,6 +163,7 @@ const PropertyDetailPage: React.FC = () => {
         const response = await fetch(`${url}/property/${id}/favorite`, {
           method: 'DELETE',
           credentials: 'include',
+          body: JSON.stringify({ email: user.email })
         });
         
         if (!response.ok) {
@@ -152,12 +176,13 @@ const PropertyDetailPage: React.FC = () => {
       } else {
         // Add to favorites
         console.log('Attempting to add to favorites:', `${url}/property/${id}/favorite`);
-        const response = await fetch(`${url}/property/${id}/favorite`, {
+        const response = await fetch(`http://localhost:8002/property/${id}/favorite`, {
           method: 'POST',
           credentials: 'include',
           headers: {
             'Content-Type': 'application/json',
-          }
+          },
+          body: JSON.stringify({ email: user.email })
         });
         
         if (!response.ok) {
