@@ -440,12 +440,19 @@ async def google_auth(request: Request):
             new_user = {
                 "email": user_info['email'],
                 "name": user_info['name'],
-                "picture": user_info['picture'],
+                "role": "user",
                 "created_at": datetime.utcnow()
             }
-            db1.get_collection('User').insert_one(new_user)
-
-        token_data = {"email": user_info['email']}
+            result = db1.get_collection('User').insert_one(new_user)
+            new_user["_id"] = str(result.inserted_id)
+            user = new_user
+        else:
+            user["_id"] = str(user["_id"])
+        token_data = {
+            "email": user['email'],
+            "role": user.get('role', 'user'),
+            "_id": user["_id"]
+        }
         access_token = create_access_token(data=token_data)
 
         response = create_cookie(access_token)
