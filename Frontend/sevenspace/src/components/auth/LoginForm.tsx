@@ -51,7 +51,7 @@ const LoginForm = () => {
   }, [user, navigate]);
   
  const authurl = import.meta.env.VITE_AUTH_URL || 'http://localhost:8000/auth_service';
-
+ const googleauthurl = import.meta.env.VITE_GOOGLE_AUTH_URL
  const handleGoogleLogin = () => {
     window.location.href = `${authurl}/google/login`;
   };

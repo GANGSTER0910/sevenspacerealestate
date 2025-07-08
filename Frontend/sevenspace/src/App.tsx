@@ -163,7 +163,7 @@ const App = () => (
                 />
                 <Route path="/admin/properties/add" element={<AddPropertyPage />} />
                 <Route path="/admin/properties/edit/:propertyId" element={<EditPropertyPage />} />
-                <Route path="/auth/google/callback" element={<GoogleCallbackPage />} />
+                <Route path="/google-callback" element={<GoogleCallbackPage />} />
               </Routes>
             </div>
           </TooltipProvider>

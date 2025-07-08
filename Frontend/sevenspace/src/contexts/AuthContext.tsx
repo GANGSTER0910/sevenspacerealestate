@@ -10,6 +10,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
   checkAuth: () => Promise<void>;
+  setToken: (token: string) => void;
   isAdmin: () => boolean;
 }
 
@@ -22,7 +23,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
-
+  const setToken = (token: string) => {
+    localStorage.setItem('token', token);
+  };
   useEffect(() => {
     checkAuth();
   }, []);
@@ -99,7 +102,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isAdmin = () => userRole === 'admin';
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, userRole, user, login, logout, checkAuth, isAdmin }}>
+    <AuthContext.Provider value={{ isAuthenticated, userRole, user, login, logout, checkAuth, isAdmin, setToken }}>
       {children}
     </AuthContext.Provider>
   );

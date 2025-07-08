@@ -65,7 +65,7 @@ app.get(
       id: user.id,
       displayName: user.displayName,
       emails: user.emails,
-    }, process.env.JWT_SECRET || 'secret', { expiresIn: '1d' });
+    }, process.env.SECRET_KEY || 'secret', { expiresIn: '1d' });
     // Redirect to frontend with token (or set cookie)
     res.redirect(`${FRONTEND_URL}/google-callback?token=${token}`);
   }
