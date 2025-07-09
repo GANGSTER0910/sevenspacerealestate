@@ -4,18 +4,19 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const GoogleCallbackPage = () => {
   const navigate = useNavigate();
-  const { setToken } = useAuth(); // Or whatever method you use to store JWT
+  const { googleCheckAuth } = useAuth(); // Or whatever method you use to store JWT
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const token = params.get("token");
-    if (token) {
-      setToken(token); // Save token (localStorage, context, etc.)
-      navigate("/user/dashboard"); // or "/admin/dashboard" if you decode the token and check role
-    } else {
-      navigate("/login");
-    }
-  }, [navigate, setToken]);
+    const checkGoogleAuth = async () => {
+      try {
+        await googleCheckAuth();
+        navigate("/user/dashboard");
+      } catch {
+        navigate("/login");
+      }
+    };
+    checkGoogleAuth();
+  }, [navigate]);
 
   return <div>Signing you in with Google...</div>;
 };

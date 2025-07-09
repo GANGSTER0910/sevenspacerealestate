@@ -18,6 +18,11 @@ from jwt.exceptions import JWTDecodeError
 import httpx
 import redis
 import random
+from google.auth.transport import requests as google_requests
+from google.oauth2 import id_token
+import httpx
+from authlib.integrations.starlette_client import OAuth, OAuthError
+
 app = FastAPI(
     title="Auth service"
 )
@@ -49,21 +54,12 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated= "auto")
 BREVO_KEY = os.getenv("Brevo_key")
 app.add_middleware(SessionMiddleware,
     secret_key = Secret_key,)
-CLIENT_ID = os.getenv('CLIENT_ID')
-CLIENT_SECRET = os.getenv('CLIENT_SECRET')
+# Add after your existing imports
+GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')
+GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET')
+GOOGLE_REDIRECT_URI = os.getenv('GOOGLE_REDIRECT_URI')
 password = os.getenv('REDIS_PASSWORD')
 url = os.getenv('url')
-oauth = OAuth()
-oauth.register(
-    name='google',
-    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
-    client_id=CLIENT_ID,
-    client_secret=CLIENT_SECRET,
-    client_kwargs={
-        'scope': 'email openid profile',
-        # 'redirect_url': 'https://sevenspacerealestate-1.onrender.com/google/auth '
-    }
-)
 @app.on_event("startup")
 async def startup_event():
     """Register service on startup"""
@@ -187,6 +183,83 @@ r = redis.Redis(
     username="default",
     password=password,
 )
+oauth = OAuth()
+oauth.register(
+    name='google',
+    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
+    client_id=GOOGLE_CLIENT_ID,
+    client_secret=GOOGLE_CLIENT_SECRET,
+    client_kwargs={
+        'scope': 'openid email profile',
+    }
+)
+
+def verify_google_id_token(token: str) -> Optional[dict]:
+    """Verify Google ID token and return user info"""
+    try:
+        idinfo = id_token.verify_oauth2_token(
+            token, 
+            google_requests.Request(), 
+            GOOGLE_CLIENT_ID
+        )
+        if idinfo['iss'] not in ['accounts.google.com', 'https://accounts.google.com']:
+            raise ValueError('Wrong issuer.')
+        
+        return {
+            'google_id': idinfo['sub'],
+            'email': idinfo['email'],
+            'name': idinfo['name'],
+            'picture': idinfo.get('picture', ''),
+            'email_verified': idinfo.get('email_verified', False)
+        }
+    except ValueError as e:
+        print(f"Token verification failed: {e}")
+        return None
+
+def get_or_create_google_user(user_info: dict) -> dict:
+    """Get existing Google user or create new one"""
+    existing_user = db1.get_collection('User').find_one({"google_id": user_info['google_id']})
+    
+    if existing_user:
+        db1.get_collection('User').update_one(
+            {"google_id": user_info['google_id']},
+            {"$set": {
+                "name": user_info['name'],
+                "picture": user_info['picture'],
+                "email": user_info['email']
+            }}
+        )
+        existing_user["_id"] = str(existing_user["_id"])
+        return existing_user
+    
+    existing_email_user = db1.get_collection('User').find_one({"email": user_info['email']})
+    
+    if existing_email_user:
+        db1.get_collection('User').update_one(
+            {"email": user_info['email']},
+            {"$set": {
+                "google_id": user_info['google_id'],
+                "name": user_info['name'],
+                "picture": user_info['picture']
+            }}
+        )
+        existing_email_user["_id"] = str(existing_email_user["_id"])
+        return existing_email_user
+    
+    new_user = {
+        "email": user_info['email'],
+        "name": user_info['name'],
+        "google_id": user_info['google_id'],
+        "picture": user_info.get('picture', ''),
+        "role": "user",  # Default role
+        "password": None,  # No password for Google users
+        "email_verified": user_info.get('email_verified', False)
+    }
+    
+    result = db1.get_collection('User').insert_one(new_user)
+    new_user["_id"] = str(result.inserted_id)
+    return new_user
+
 
 @app.post('/decode')
 async def decode(request: Request):
@@ -421,57 +494,6 @@ async def verify_otp(email: str, otp: int):
     r.delete(f"otp:{email}")
     return JSONResponse(status_code=200, content={"message": "OTP verified successfully"})
 
-@app.get('/google/login')
-async def google_login(request: Request):
-    redirect_uri = request.url_for('google_auth')  
-    return await oauth.google.authorize_redirect(request, redirect_uri)
-
-@app.get('/google/auth')
-async def google_auth(request: Request):
-    try:
-        token = await oauth.google.authorize_access_token(request)
-        user_info = token.get('userinfo')
-
-        if not user_info:
-            raise HTTPException(status_code=400, detail="Failed to retrieve user info")
-
-        user = db1.get_collection('User').find_one({"email": user_info['email']})
-        if not user:
-            new_user = {
-                "email": user_info['email'],
-                "name": user_info['name'],
-                "role": "user",
-                "created_at": datetime.utcnow()
-            }
-            result = db1.get_collection('User').insert_one(new_user)
-            new_user["_id"] = str(result.inserted_id)
-            user = new_user
-        else:
-            user["_id"] = str(user["_id"])
-        token_data = {
-            "email": user['email'],
-            "role": user.get('role', 'user'),
-            "_id": user["_id"]
-        }
-        access_token = create_access_token(data=token_data)
-
-        response = create_cookie(access_token)
-        response = RedirectResponse(url="https://sevenspacerealestate.vercel.app/auth/google/callback")
-        response.set_cookie(
-            key="session",
-            value=access_token,
-            httponly=True,
-            secure=True,
-            samesite='none',
-            max_age=3600,
-            path="/",
-            
-        )
-        # response.content = "Google authentication successful. Welcome!"
-        return response
-
-    except OAuthError as error:
-        raise HTTPException(status_code=400, detail=f"OAuth error: {error.error}")
 @app.put("/user/update")
 async def update_profile(data: UpdateUser, request: Request):
     """Update currently authenticated user's profile with partial fields."""
@@ -514,6 +536,115 @@ async def update_profile(data: UpdateUser, request: Request):
         raise he
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+@app.post("/auth/google/token")
+async def google_token_login(request: GoogleTokenRequest):
+    """Login with Google ID token (for frontend integration)"""
+    try:
+        user_info = verify_google_id_token(request.credential)
+        
+        if not user_info:
+            raise HTTPException(status_code=401, detail="Invalid Google token")
+        
+        if not user_info['email_verified']:
+            raise HTTPException(status_code=401, detail="Email not verified")
+        
+        user = get_or_create_google_user(user_info)
+        expire_timedelta = timedelta(hours=1)
+        access_token = create_access_token(user, expire_timedelta)
+        
+        response = JSONResponse(
+            content={
+                "message": "Google login successful",
+                "user": {
+                    "id": user["_id"],
+                    "email": user["email"],
+                    "name": user["name"],
+                    "picture": user.get("picture", ""),
+                    "role": user.get("role", "user")
+                }
+            }
+        )
+        response.set_cookie(
+            key="session",
+            value=access_token,
+            httponly=True,
+            secure=True,
+            samesite='none',
+            max_age=3600,
+            path="/",
+        )
+        
+        return response
+        
+    except Exception as e:
+        print(f"Google login error: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.get("/auth/google/login")
+async def google_login(request: Request):
+    """Redirect to Google OAuth (for server-side flow)"""
+    redirect_uri = request.url_for('google_callback')
+    return await oauth.google.authorize_redirect(request, redirect_uri)
+
+@app.get("/auth/google/callback")
+async def google_callback(request: Request):
+    """Handle Google OAuth callback"""
+    try:
+        token = await oauth.google.authorize_access_token(request)
+        
+        user_info = token.get('userinfo')
+        if not user_info:
+            async with httpx.AsyncClient() as client:
+                response = await client.get(
+                    'https://www.googleapis.com/oauth2/v2/userinfo',
+                    headers={'Authorization': f'Bearer {token["access_token"]}'}
+                )
+                user_info = response.json()
+        
+        formatted_user_info = {
+            'google_id': user_info['sub'],
+            'email': user_info['email'],
+            'name': user_info['name'],
+            'picture': user_info.get('picture', ''),
+            'email_verified': user_info.get('email_verified', False)
+        }
+        
+        user = get_or_create_google_user(formatted_user_info)
+        
+        expire_timedelta = timedelta(hours=1)
+        access_token = create_access_token(user, expire_timedelta)
+        
+        frontend_url = os.getenv('FRONTEND_URL')  # Your frontend URL
+        response = RedirectResponse(url=f"{frontend_url}/user/dashboard")
+        
+        response.set_cookie(
+            key="session",
+            value=access_token,
+            httponly=True,
+            secure=True,
+            samesite='none',
+            max_age=3600,
+            path="/",
+        )
+        
+        return response
+        
+    except Exception as e:
+        print(f"Google callback error: {str(e)}")
+        raise HTTPException(status_code=400, detail="Google authentication failed")
+
+@app.get("/auth/google/url")
+async def get_google_auth_url():
+    """Get Google OAuth URL for frontend"""
+    auth_url = (
+        f"https://accounts.google.com/o/oauth2/v2/auth?"
+        f"client_id={GOOGLE_CLIENT_ID}&"
+        f"redirect_uri={GOOGLE_REDIRECT_URI}&"
+        f"scope=openid email profile&"
+        f"response_type=code&"
+        f"access_type=offline"
+    )
+    return {"auth_url": auth_url}
 
 @app.get("/health")
 async def health_check():
@@ -521,12 +652,10 @@ async def health_check():
     Health check endpoint
     """
     try:
-        # Check database connection
         db1.command('ping')
         return {"status": "healthy", "service": SERVICE_NAME}
     except Exception as e:
         logger.error(f"Health check failed: {str(e)}")
-        # Return 200 even if database check fails, as the service itself is running
         return {"status": "healthy", "service": SERVICE_NAME, "database": "unavailable"}
 
 @app.get("/user/me")

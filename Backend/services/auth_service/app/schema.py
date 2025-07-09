@@ -46,3 +46,13 @@ class UpdateUser(BaseModel):
     bio: Optional[str] = None
     role: Optional[str] = "user"
     password: Optional[str] = None
+
+class GoogleTokenRequest(BaseModel):
+    credential: str 
+
+class GoogleUser(BaseModel):
+    google_id: str
+    email: str
+    name: str
+    picture: Optional[str] = None
+    email_verified: bool = True
