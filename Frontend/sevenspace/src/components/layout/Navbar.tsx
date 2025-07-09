@@ -106,14 +106,14 @@ const Navbar: React.FC = () => {
                 <>
                   {isAdmin() && (
                     <Link
-                      to="/admin/dashboard"
+                      to="/admin/properties"
                       className="inline-flex items-center px-1 pt-1 border-b-2 border-realestate-primary text-sm font-medium text-realestate-dark"
                     >
                       Admin
                     </Link>
                   )}
                   <Link
-                    to={isAdmin() ? "/admin/dashboard" : "/user/dashboard"}
+                    to={isAdmin() ? "/admin/properties" : "/user/dashboard"}
                     className="inline-flex items-center px-1 pt-1 border-b-2 border-realestate-primary text-sm font-medium text-realestate-dark"
                   >
                     Dashboard

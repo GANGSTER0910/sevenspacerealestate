@@ -236,10 +236,12 @@ const LoginForm = () => {
           const buttonElement = document.getElementById('google-signin-button');
           if (buttonElement) {
             window.google.accounts.id.renderButton(buttonElement, {
-              theme: 'outline',
+              theme: 'filled_white',
               size: 'large',
               width: '100%',
               text: 'continue_with',
+              shape: 'rectangular',
+              logo_alignment: 'center',
             });
           }
         }
@@ -287,18 +289,9 @@ const LoginForm = () => {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Google Sign-In Buttons - NEW ADDITION */}
+        {/* Google Sign-In Button - Only GIS button remains */}
         <div className="space-y-2">
           <div id="google-signin-button" className="w-full"></div>
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full"
-            onClick={handleGoogleRedirectLogin}
-            disabled={isGoogleLoading}
-          >
-            {isGoogleLoading ? "Signing in..." : "Continue with Google (Redirect)"}
-          </Button>
         </div>
 
         <div className="relative">

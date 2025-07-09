@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { 
   Table, 
   TableBody, 
@@ -10,7 +11,7 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
-import { Search, Eye, Trash2, CheckCircle } from "lucide-react";
+import { Search, Eye, Trash2, CheckCircle, Edit } from "lucide-react";
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -22,6 +23,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { saveAs } from "file-saver";
 
@@ -56,6 +58,9 @@ const AdminInquiriesPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const [openDialogIndex, setOpenDialogIndex] = useState<number | null>(null);
+  const [responseForm, setResponseForm] = useState<ContactMessage | null>(null);
+  const [isSending, setIsSending] = useState(false);
 
   useEffect(() => {
     fetchMessages();
@@ -115,6 +120,53 @@ const AdminInquiriesPage: React.FC = () => {
     });
   }
 };
+
+  const handleEditClick = (message: ContactMessage, index: number) => {
+    setResponseForm({ ...message });
+    setOpenDialogIndex(index);
+  };
+
+  const handleResponseInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    if (!responseForm) return;
+    const { id, value } = e.target;
+    setResponseForm(prev => prev ? { ...prev, [id]: value } : null);
+  };
+
+  const handleSendResponse = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSending(true);
+    if (!responseForm) return;
+    try {
+      const payload = {
+        name: responseForm.name,
+        email: responseForm.email,
+        subject: responseForm.subject,
+        content: responseForm.content,
+      };
+      const response = await fetch(`${url}/response/contact`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.detail || 'Failed to send response');
+      }
+      toast({
+        title: "Response sent!",
+        description: "Your response has been sent to the user.",
+      });
+      setOpenDialogIndex(null);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send response. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSending(false);
+    }
+  };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -208,9 +260,45 @@ const handleExport = () => {
                   <TableCell className="max-w-xs truncate">{message.content}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end space-x-2">
-                      <Button variant="ghost" size="icon" title="View Details">
-                        <Eye className="h-4 w-4" />
-                      </Button>
+                      <Dialog open={openDialogIndex === index} onOpenChange={open => { if (!open) setOpenDialogIndex(null); }}>
+                        <Button variant="ghost" size="icon" title="Respond to Inquiry" onClick={() => handleEditClick(message, index)}>
+                          <Edit className="h-4 w-4 text-blue-500" />
+                        </Button>
+                        <DialogContent className="max-w-2xl">
+                          <DialogHeader>
+                            <DialogTitle>Respond to Inquiry</DialogTitle>
+                            <DialogDescription>Send a response to the user for this inquiry.</DialogDescription>
+                          </DialogHeader>
+                          <form onSubmit={handleSendResponse} className="space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <label htmlFor="name" className="text-sm font-medium">Full Name</label>
+                                <Input id="name" value={responseForm?.name || ''} onChange={handleResponseInputChange} required />
+                              </div>
+                              <div className="space-y-2">
+                                <label htmlFor="email" className="text-sm font-medium">Email Address</label>
+                                <Input id="email" type="email" value={responseForm?.email || ''} onChange={handleResponseInputChange} required />
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              <label htmlFor="subject" className="text-sm font-medium">Subject</label>
+                              <Input id="subject" value={responseForm?.subject || ''} onChange={handleResponseInputChange} required />
+                            </div>
+                            <div className="space-y-2">
+                              <label htmlFor="content" className="text-sm font-medium">Message</label>
+                              <Textarea id="content" value={responseForm?.content || ''} onChange={handleResponseInputChange} required className="min-h-[120px]" />
+                            </div>
+                            <DialogFooter>
+                              <Button type="submit" className="bg-realestate-primary text-white" disabled={isSending}>
+                                {isSending ? "Sending..." : "Send Response"}
+                              </Button>
+                              <DialogClose asChild>
+                                <Button type="button" variant="outline">Cancel</Button>
+                              </DialogClose>
+                            </DialogFooter>
+                          </form>
+                        </DialogContent>
+                      </Dialog>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button variant="ghost" size="icon" title="Delete">

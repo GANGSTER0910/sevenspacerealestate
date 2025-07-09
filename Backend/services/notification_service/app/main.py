@@ -97,36 +97,22 @@ def validate_email(email: str) -> bool:
 @app.post("/contact")
 async def submit_contact_form(contact: Contact):
     try:
-        logger.info(f"Received contact form submission: {contact.dict()}")
-        
-        # Validate email
         if not validate_email(contact.email):
-            logger.error(f"Invalid email format: {contact.email}")
             raise HTTPException(status_code=400, detail="Invalid email format")
-
-        # Store contact form data in database
         try:
             contact_data = contact.dict()
-            logger.info("Attempting to store contact data in database...")
-            # Verify database connection before inserting
             client1.admin.command('ping')
             result = db1.get_collection('Contact').insert_one(contact_data)
             if not result.inserted_id:
                 raise Exception("Failed to insert document - no ID returned")
-            logger.info(f"Contact data stored successfully with ID: {result.inserted_id}")
         except Exception as db_error:
-            logger.error(f"Database error: {str(db_error)}")
-            # Try to get more details about the error
             if hasattr(db_error, 'details'):
-                logger.error(f"Error details: {db_error.details}")
-            raise HTTPException(
+                raise HTTPException(
                 status_code=500,
                 detail=f"Database error: {str(db_error)}"
             )
         
-        # Send email using Brevo
         try:
-            logger.info("Initializing Brevo email configuration...")
             configuration = Configuration()
             configuration.api_key['api-key'] = BREVO_KEY
 
@@ -183,17 +169,105 @@ async def submit_contact_form(contact: Contact):
             response = api_instance.send_transac_email(email)
             return {"message": "Contact form submitted and email sent successfully"}
         except ApiException as e:
-            logger.error(f"Brevo API error: {str(e)}")
             raise HTTPException(status_code=500, detail=f"Failed to send email: {str(e)}")
         except Exception as e:
-            logger.error(f"Unexpected error while sending email: {str(e)}")
             raise HTTPException(status_code=500, detail=f"Failed to send email: {str(e)}")
     except HTTPException as e:
-        logger.error(f"HTTP Exception: {str(e)}")
         raise e
     except Exception as e:
-        logger.error(f"Unexpected error in contact form submission: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+@app.post("/response/contact")
+async def submit_response_form(contact: Contact):
+    try:
+        if not validate_email(contact.email):
+            raise HTTPException(status_code=400, detail="Invalid email format")
+
+        try:
+            contact_data = contact.dict()
+            client1.admin.command('ping')
+            result = db1.get_collection('Contact').insert_one(contact_data)
+            if not result.inserted_id:
+                raise Exception("Failed to insert document - no ID returned")
+        except Exception as db_error:
+            if hasattr(db_error, 'details'):
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Database error: {str(db_error)}"
+            )
+        try:
+            configuration = Configuration()
+            configuration.api_key['api-key'] = BREVO_KEY
+
+            email = SendSmtpEmail(
+                to=[{"email": contact.email, "name": contact.name}],
+                sender={"email": "harsh.p4@ahduni.edu.in", "name": "Sevenspace"},
+                subject="Welcome to Seven Space Real Estate",
+                admin_response_html = """
+            <html>
+            <body style="font-family: Arial, sans-serif; background-color: #f9f9f9; padding: 20px;">
+                <table width="100%" style="max-width: 600px; margin: auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.1);">
+                <tr>
+                    <td style="background-color: #0055a5; padding: 20px; text-align: center;">
+                    <img src="https://i.imgur.com/1ZfH5EN.png" alt="Seven Space Real Estate" width="120" />
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding: 30px;">
+                    <h2 style="color: #0055a5; margin-top: 0;">Response to Your Inquiry</h2>
+
+                    <p style="font-size: 16px; color: #333;"><strong>Name:</strong> {name}</p>
+                    <p style="font-size: 16px; color: #333;"><strong>Email:</strong> {email}</p>
+                    <p style="font-size: 16px; color: #333;"><strong>Subject:</strong> {subject}</p>
+                    <p style="font-size: 16px; color: #333;"><strong>Your Message:</strong><br />{message}</p>
+
+                    <hr style="margin: 25px 0; border: none; border-top: 1px solid #ccc;" />
+
+                    <p style="font-size: 16px; color: #333;">
+                        Dear {name},<br /><br />
+                        Thank you for reaching out to <strong>Seven Space Real Estate</strong>. We have received your inquiry and appreciate your interest.
+                    </p>
+                    <p style="font-size: 16px; color: #333;">
+                        If there are any additional details you’d like to share to help us serve you better, feel free to reply to this email.
+                    </p>
+                    <p style="font-size: 16px; color: #333;">
+                        Warm regards,<br />
+                        <strong>Pravin Sachaniya</strong><br />
+                        Real Estate Agent<br />
+                        📞 +91 99251 11624<br />
+                        📧 pravin.sachaniya@gmail.com<br />
+                        📍 B – 435, SOBO Center, South Bopal, Ahmedabad – 380058
+                    </p>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="background-color: #f1f1f1; text-align: center; padding: 15px; font-size: 14px; color: #666;">
+                    © Seven Space Real Estate – Ahmedabad Realtors Association | NAR India | World Properties
+                    </td>
+                </tr>
+                </table>
+            </body>
+            </html>
+            """.format(
+                name=contact.name,
+                email=contact.email,
+                subject=contact.subject,
+                message=contact.message
+            ))
+            api_client = ApiClient(configuration)
+            api_instance = TransactionalEmailsApi(api_client)
+
+            response = api_instance.send_transac_email(email)
+            return {"message": "Contact form submitted and email sent successfully"}
+        except ApiException as e:
+            raise HTTPException(status_code=500, detail=f"Failed to send email: {str(e)}")
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to send email: {str(e)}")
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
 @app.post("/otp")
 async def send_otp(contact: OtpRequest):
     configuration = Configuration()

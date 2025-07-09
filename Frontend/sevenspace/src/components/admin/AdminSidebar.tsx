@@ -58,13 +58,6 @@ const AdminSidebar: React.FC = () => {
         <div className="flex-1 overflow-auto py-2">
           <nav className="grid items-start px-2 text-sm font-medium">
             <SidebarLink 
-              href="/admin/dashboard" 
-              icon={Home}
-              active={pathname === "/admin/dashboard"}
-            >
-              Dashboard
-            </SidebarLink>
-            <SidebarLink 
               href="/admin/properties" 
               icon={Building}
               active={pathname.startsWith("/admin/properties")}
@@ -84,13 +77,6 @@ const AdminSidebar: React.FC = () => {
               active={pathname.startsWith("/admin/inquiries")}
             >
               Inquiries
-            </SidebarLink>
-            <SidebarLink 
-              href="/admin/analytics" 
-              icon={BarChart}
-              active={pathname.startsWith("/admin/analytics")}
-            >
-              Analytics
             </SidebarLink>
             <SidebarLink 
               href="/admin/settings" 
