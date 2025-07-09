@@ -203,7 +203,7 @@ async def submit_response_form(contact: Contact):
                 to=[{"email": contact.email, "name": contact.name}],
                 sender={"email": "harsh.p4@ahduni.edu.in", "name": "Sevenspace"},
                 subject="Welcome to Seven Space Real Estate",
-                admin_response_html = """
+                html_content = """
             <html>
             <body style="font-family: Arial, sans-serif; background-color: #f9f9f9; padding: 20px;">
                 <table width="100%" style="max-width: 600px; margin: auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.1);">
