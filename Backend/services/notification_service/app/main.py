@@ -126,7 +126,7 @@ async def submit_contact_form(contact: Contact):
                             <table width="100%" style="max-width: 600px; margin: auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.1);">
                                 <tr>
                                     <td style="background-color: #0055a5; padding: 20px; text-align: center;">
-                                        <img src="https://i.imgur.com/1ZfH5EN.png" alt="Seven Space Real Estate" width="120" />
+                                        <img src="https://res.cloudinary.com/dzhwkg2io/image/upload/v1752059059/Screenshot_2025-05-13_172050_c6qlt3.png" alt="Seven Space Real Estate" width="120" />
                                     </td>
                                 </tr>
                                 <tr>
@@ -209,7 +209,7 @@ async def submit_response_form(contact: Contact):
                 <table width="100%" style="max-width: 600px; margin: auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.1);">
                 <tr>
                     <td style="background-color: #0055a5; padding: 20px; text-align: center;">
-                    <img src="https://i.imgur.com/1ZfH5EN.png" alt="Seven Space Real Estate" width="120" />
+                    <img src="https://res.cloudinary.com/dzhwkg2io/image/upload/v1752059059/Screenshot_2025-05-13_172050_c6qlt3.png" alt="Seven Space Real Estate" width="120" />
                     </td>
                 </tr>
                 <tr>
@@ -219,7 +219,6 @@ async def submit_response_form(contact: Contact):
                     <p style="font-size: 16px; color: #333;"><strong>Name:</strong> {name}</p>
                     <p style="font-size: 16px; color: #333;"><strong>Email:</strong> {email}</p>
                     <p style="font-size: 16px; color: #333;"><strong>Subject:</strong> {subject}</p>
-                    <p style="font-size: 16px; color: #333;"><strong>Your Message:</strong><br />{message}</p>
 
                     <hr style="margin: 25px 0; border: none; border-top: 1px solid #ccc;" />
 
@@ -228,6 +227,7 @@ async def submit_response_form(contact: Contact):
                         Thank you for reaching out to <strong>Seven Space Real Estate</strong>. We have received your inquiry and appreciate your interest.
                     </p>
                     <p style="font-size: 16px; color: #333;">
+                        {message}, 
                         If there are any additional details you’d like to share to help us serve you better, feel free to reply to this email.
                     </p>
                     <p style="font-size: 16px; color: #333;">
