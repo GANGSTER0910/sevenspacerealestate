@@ -26,7 +26,6 @@ import AdminPropertiesPage from "./pages/admin/AdminPropertiesPage";
 import AddPropertyPage from "./pages/admin/AddPropertyPage";
 import AdminUsersPage from "./pages/admin/AdminUsersPage";
 import AdminInquiriesPage from "./pages/admin/AdminInquiriesPage";
-import AdminAnalyticsPage from "./pages/admin/AdminAnalyticsPage";
 import AdminSettingsPage from "./pages/admin/AdminSettingsPage";
 import AdminHelpPage from "./pages/admin/AdminHelpPage";
 import EditPropertyPage from '@/pages/admin/EditPropertyPage';
@@ -104,14 +103,6 @@ const App = () => (
                       <AdminDashboardPage />
                     </ProtectedRoute>
                   } 
-                />
-                <Route
-                  path="/admin/analytics"
-                  element={
-                    <ProtectedRoute requiredRole="admin">
-                      <AdminAnalyticsPage />
-                    </ProtectedRoute>
-                  }
                 />
                 <Route
                   path="/admin/settings"
