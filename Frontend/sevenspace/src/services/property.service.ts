@@ -52,7 +52,6 @@ export const propertyService = {
         const response = await fetchApi('/property/home', {
           method: 'GET',
         });
-        console.log("Response from /home:", response); // Debug log
         if (!response || !Array.isArray(response.properties)) {
             console.error("Invalid response format for home properties:", response);
             return { count: 0, properties: [] };
@@ -69,7 +68,6 @@ export const propertyService = {
             status: filters.status || 'available',
           }
         });
-        console.log("Response from /category:", response); // Debug log
         if (!response || !Array.isArray(response.properties)) {
             console.error("Invalid response format for category filter:", response);
             return { count: 0, properties: [] };
@@ -85,8 +83,6 @@ export const propertyService = {
         }
       });
       
-      console.log("Response from /all:", response); // Debug log
-      // Ensure response is valid and has properties array before mapping
       if (!response || !Array.isArray(response.properties)) {
           console.error("Invalid response format for all properties:", response);
           return { count: 0, properties: [] };

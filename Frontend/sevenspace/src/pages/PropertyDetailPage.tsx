@@ -161,8 +161,6 @@ const PropertyDetailPage: React.FC = () => {
       setIsFavoriteLoading(true);
       
       if (isFavorited) {
-        // Remove from favorites
-        console.log('Attempting to remove from favorites:', `${url}/property/${id}/favorite`);
         const response = await fetch(`${url}/property/${id}/favorite?email=${user.email}`, {
           method: 'DELETE',
           credentials: 'include',
@@ -177,8 +175,6 @@ const PropertyDetailPage: React.FC = () => {
         setIsFavorited(false);
         toast.success("Property removed from favorites");
       } else {
-        // Add to favorites
-        console.log('Attempting to add to favorites:', `${url}/property/${id}/favorite?email=${user.email}`);
         const response = await fetch(`${url}/property/${id}/favorite?email=${user.email}`, {
           method: 'POST',
           credentials: 'include'

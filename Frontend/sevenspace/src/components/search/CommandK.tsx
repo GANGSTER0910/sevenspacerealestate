@@ -38,7 +38,6 @@ const CommandK: React.FC<CommandKProps> = ({ open, onOpenChange }) => {
   useEffect(() => {
     const trimmed = searchTerm.trim();
     if( trimmed.length < 7) return
-    // console.log("Search term:", trimmed);
     const handler = setTimeout(async () => {
       if (!trimmed) {
         setSearchResults([]);
@@ -46,9 +45,7 @@ const CommandK: React.FC<CommandKProps> = ({ open, onOpenChange }) => {
       }
       try {
         const results = await propertyService.search(trimmed);
-        console.log("Search results:", results.properties[0]);
         setSearchResults(results.properties?.slice(0, 5) || []);
-        console.log("Search results set:", results.properties?.slice(0, 5) || []);
       } catch (error) {
         console.error('Search error in CommandK:', error);
         setSearchResults([]);

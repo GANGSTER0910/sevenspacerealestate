@@ -136,8 +136,6 @@ const fetchFavorites = async () => {
     }
 
     const data = await response.json();
-    console.log(data);
-    // const propertyIds = data.favorites;
     setFavorites(data.favorites );
     
   } catch (error) {

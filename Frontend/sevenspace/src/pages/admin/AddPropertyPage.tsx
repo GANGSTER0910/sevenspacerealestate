@@ -24,7 +24,7 @@ const AddPropertyPage = () => {
     try {
       const formData = new FormData(e.currentTarget);
       
-      // ... inside handleSubmit
+     
 let imageUrls: string[] = [];
 if (selectedFiles.length > 0) {
   for (const file of selectedFiles) {
@@ -41,10 +41,7 @@ if (selectedFiles.length > 0) {
       throw new Error('Failed to upload images');
     }
 
-    // const imageData = await uploadResponse.json();
-    // console.log('Image uploaded:', imageData.url);
-    // imageUrls.push(imageData.url);
-  const imageData = await uploadResponse.json();
+const imageData = await uploadResponse.json();
 const urls = imageData
   .flat() // flatten one level
   .map((item: any) => item.url)

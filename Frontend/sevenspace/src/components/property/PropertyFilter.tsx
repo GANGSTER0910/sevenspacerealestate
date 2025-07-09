@@ -56,7 +56,6 @@ const PropertyFilter: React.FC<PropertyFilterProps> = ({ onFilter, initialType }
   };
 
   const handleApplyFilters = () => {
-    console.log("Applying filters:", filters);
     onFilter(filters);
   };
 

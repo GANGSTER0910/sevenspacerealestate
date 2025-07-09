@@ -15,11 +15,9 @@ const PropertyPage: React.FC = () => {
     status: 'available'
   });
 
-  // Use the useProperties hook to fetch data
   const { data, isLoading, error } = useProperties(filterOptions);
   const properties = data?.properties || [];
 
-  // Update filterOptions when URL type changes
   useEffect(() => {
     if (typeFromUrl) {
       setFilterOptions(prev => ({ ...prev, category: typeFromUrl }));
@@ -27,9 +25,7 @@ const PropertyPage: React.FC = () => {
   }, [typeFromUrl]);
   
   const handleFilter = (filters: PropertyFilterOptions) => {
-    console.log("Filtering with:", filters);
     try {
-      // Convert PropertyFilterOptions to PropertyFilters
       const newFilters: PropertyFilters = {
         category: filters.type || typeFromUrl,
         status: 'available'
