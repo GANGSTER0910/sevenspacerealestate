@@ -252,7 +252,7 @@ async def submit_response_form(contact: Contact):
                 name=contact.name,
                 email=contact.email,
                 subject=contact.subject,
-                message=contact.message
+                message=contact.content
             ))
             api_client = ApiClient(configuration)
             api_instance = TransactionalEmailsApi(api_client)

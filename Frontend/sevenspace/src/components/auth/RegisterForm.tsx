@@ -204,7 +204,7 @@ const RegisterForm: React.FC = () => {
             />
             <Button 
               type="submit" 
-              className="w-full bg-realestate-primary hover:bg-realestate-secondary" 
+              className="w-full " 
               disabled={isLoading}
             >
               {isLoading ? "Creating Account..." : "Create Account"}
